@@ -56,13 +56,7 @@ export default function Footer() {
                       </form>
                     </>}
                   </>
-                  : <>
-                    <Link href={PATH_ADMIN_PHOTOS}>
-                      Admin
-                    </Link>
-                    {SHOW_REPO_LINK &&
-                      <RepoLink />}
-                  </>}
+                  : null}
               </div>
               <div className="flex items-center h-10">
                 <ThemeSwitcher />
