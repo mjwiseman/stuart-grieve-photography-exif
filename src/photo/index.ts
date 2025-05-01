@@ -1,23 +1,29 @@
-import { Camera } from '@/camera';
 import { formatFocalLength } from '@/focal';
-import { Lens } from '@/lens';
-import { getNextImageUrlForRequest } from '@/services/next-image';
-import { FilmSimulation } from '@/simulation';
-import { HIGH_DENSITY_GRID, IS_PREVIEW, SHOW_EXIF_DATA } from '@/site/config';
-import { ABSOLUTE_PATH_FOR_HOME_IMAGE } from '@/site/paths';
+import { getNextImageUrlForRequest } from '@/platforms/next-image';
+import { photoHasFilmData } from '@/film';
+import {
+  HIGH_DENSITY_GRID,
+  IS_PREVIEW,
+  SHOW_EXIF_DATA,
+  SHOW_FILMS,
+  SHOW_LENSES,
+  SHOW_RECIPES,
+} from '@/app/config';
+import { ABSOLUTE_PATH_FOR_HOME_IMAGE } from '@/app/paths';
 import { formatDate, formatDateFromPostgresString } from '@/utility/date';
 import {
   formatAperture,
   formatIso,
   formatExposureCompensation,
   formatExposureTime,
-} from '@/utility/exif';
+} from '@/utility/exif-format';
 import { parameterize } from '@/utility/string';
 import camelcaseKeys from 'camelcase-keys';
 import { isBefore } from 'date-fns';
 import type { Metadata } from 'next';
-
-export const OUTDATED_THRESHOLD = new Date('2024-06-16');
+import { FujifilmRecipe } from '@/platforms/fujifilm/recipe';
+import { FujifilmSimulation } from '@/platforms/fujifilm/simulation';
+import { PhotoSyncStatus, generatePhotoSyncStatus } from './sync';
 
 // INFINITE SCROLL: FEED
 export const INFINITE_SCROLL_FEED_INITIAL =
@@ -61,7 +67,8 @@ export interface PhotoExif {
   exposureCompensation?: number
   latitude?: number
   longitude?: number
-  filmSimulation?: FilmSimulation
+  film?: FujifilmSimulation
+  recipeData?: string
   takenAt?: string
   takenAtNaive?: string
 }
@@ -76,6 +83,7 @@ export interface PhotoDbInsert extends PhotoExif {
   caption?: string
   semanticDescription?: string
   tags?: string[]
+  recipeTitle?: string
   locationName?: string
   priorityOrder?: number
   hidden?: boolean
@@ -84,15 +92,16 @@ export interface PhotoDbInsert extends PhotoExif {
 }
 
 // Raw db response
-export interface PhotoDb extends Omit<PhotoDbInsert, 'takenAt' | 'tags'> {
+export interface PhotoDb extends
+  Omit<PhotoDbInsert, 'takenAt' | 'tags'> {
   updatedAt: Date
   createdAt: Date
   takenAt: Date
-  tags: string[]
+  tags: string[] | null
 }
 
 // Parsed db response
-export interface Photo extends PhotoDb {
+export interface Photo extends Omit<PhotoDb, 'recipeData'> {
   focalLengthFormatted?: string
   focalLengthIn35MmFormatFormatted?: string
   fNumberFormatted?: string
@@ -100,20 +109,9 @@ export interface Photo extends PhotoDb {
   exposureTimeFormatted?: string
   exposureCompensationFormatted?: string
   takenAtNaiveFormatted: string
-}
-
-export interface PhotoSetCategory {
-  tag?: string
-  camera?: Camera
-  simulation?: FilmSimulation
-  focal?: number
-  lens?: Lens // Unimplemented as a set
-}
-
-export interface PhotoSetAttributes {
-  photos: Photo[]
-  count?: number
-  dateRange?: PhotoDateRange
+  tags: string[]
+  recipeData?: FujifilmRecipe
+  syncStatus: PhotoSyncStatus
 }
 
 export const parsePhotoFromDb = (photoDbRaw: PhotoDb): Photo => {
@@ -137,7 +135,14 @@ export const parsePhotoFromDb = (photoDbRaw: PhotoDb): Photo => {
       formatExposureCompensation(photoDb.exposureCompensation),
     takenAtNaiveFormatted:
       formatDateFromPostgresString(photoDb.takenAtNaive),
-  };
+    recipeData: photoDb.recipeData
+      // Legacy check on escaped, string-based JSON
+      ? typeof photoDb.recipeData === 'string'
+        ? JSON.parse(photoDb.recipeData)
+        : photoDb.recipeData
+      : undefined,
+    syncStatus: generatePhotoSyncStatus(photoDb),
+  } as Photo;
 };
 
 export const parseCachedPhotoDates = (photo: Photo) => ({
@@ -155,6 +160,7 @@ export const convertPhotoToPhotoDbInsert = (
 ): PhotoDbInsert => ({
   ...photo,
   takenAt: photo.takenAt.toISOString(),
+  recipeData: JSON.stringify(photo.recipeData),
 });
 
 export const photoStatsAsString = (photo: Photo) => [
@@ -207,17 +213,18 @@ export const translatePhotoId = (id: string) =>
 
 export const titleForPhoto = (
   photo: Photo,
-  preferDateOverUntitled?: boolean,
+  useDateAsTitle = true,
+  fallback = 'Untitled',
 ) => {
   if (photo.title) {
     return photo.title;
-  } else if (preferDateOverUntitled && (photo.takenAt || photo.createdAt)) {
+  } else if (useDateAsTitle && (photo.takenAt || photo.createdAt)) {
     return formatDate({
       date: photo.takenAt || photo.createdAt,
       length: 'tiny',
-    });
+    }).toLocaleUpperCase();
   } else {
-    return 'Untitled';
+    return fallback;
   }
 };
 
@@ -258,7 +265,7 @@ export const descriptionForPhotoSet = (
       photoLabelForCount(explicitCount ?? photos.length, false),
     ].join(' ');
 
-const sortPhotosByDate = (
+const sortPhotosByDateNonDestructively = (
   photos: Photo[],
   order: 'ASC' | 'DESC' = 'DESC',
 ) =>
@@ -273,9 +280,10 @@ export const dateRangeForPhotos = (
   let start = '';
   let end = '';
   let description = '';
+  let descriptionWithSpaces = '';
 
   if (explicitDateRange || photos.length > 0) {
-    const photosSorted = sortPhotosByDate(photos);
+    const photosSorted = sortPhotosByDateNonDestructively(photos);
     start = formatDateFromPostgresString(
       explicitDateRange?.start ?? photosSorted[photos.length - 1].takenAtNaive,
       'short',
@@ -287,14 +295,23 @@ export const dateRangeForPhotos = (
     description = start === end
       ? start
       : `${start}–${end}`;
+    descriptionWithSpaces = start === end
+      ? start
+      : `${start} – ${end}`;
   }
 
-  return { start, end, description };
+  return { start, end, description, descriptionWithSpaces };
 };
 
 const photoHasCameraData = (photo: Photo) =>
   Boolean(photo.make) &&
   Boolean(photo.model);
+
+const photoHasLensData = (photo: Photo) =>
+  Boolean(photo.lensModel);
+
+const photoHasRecipeData = (photo: Photo) =>
+  Boolean(photo.recipeData);
 
 const photoHasExifData = (photo: Photo) =>
   Boolean(photo.focalLength) ||
@@ -305,7 +322,23 @@ const photoHasExifData = (photo: Photo) =>
   Boolean(photo.exposureCompensationFormatted);
 
 export const shouldShowCameraDataForPhoto = (photo: Photo) =>
-  SHOW_EXIF_DATA && photoHasCameraData(photo);
+  SHOW_EXIF_DATA &&
+  photoHasCameraData(photo);
+
+export const shouldShowLensDataForPhoto = (photo: Photo) =>
+  SHOW_EXIF_DATA &&
+  SHOW_LENSES &&
+  photoHasLensData(photo);
+
+export const shouldShowRecipeDataForPhoto = (photo: Photo) =>
+  SHOW_EXIF_DATA &&
+  SHOW_RECIPES &&
+  photoHasRecipeData(photo);
+
+export const shouldShowFilmDataForPhoto = (photo: Photo) =>
+  SHOW_EXIF_DATA &&
+  SHOW_FILMS &&
+  photoHasFilmData(photo);
 
 export const shouldShowExifDataForPhoto = (photo: Photo) =>
   SHOW_EXIF_DATA && photoHasExifData(photo);
@@ -319,13 +352,11 @@ export const getKeywordsForPhoto = (photo: Photo) =>
 export const isNextImageReadyBasedOnPhotos = async (
   photos: Photo[],
 ): Promise<boolean> =>
-  photos.length > 0 && fetch(getNextImageUrlForRequest(
-    photos[0].url,
-    640,
-    undefined,
-    undefined,
-    IS_PREVIEW,
-  ))
+  photos.length > 0 && fetch(getNextImageUrlForRequest({
+    imageUrl: photos[0].url,
+    size: 640,
+    addBypassSecret: IS_PREVIEW,
+  }))
     .then(response => response.ok)
     .catch(() => false);
 

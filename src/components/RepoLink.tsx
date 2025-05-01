@@ -1,3 +1,4 @@
+import { TEMPLATE_REPO_NAME, TEMPLATE_REPO_URL } from '@/app/config';
 import { clsx } from 'clsx/lite';
 import Link from 'next/link';
 import { BiLogoGithub } from 'react-icons/bi';
@@ -9,19 +10,19 @@ export default function RepoLink() {
         Made with
       </span>
       <Link
-        href="http://github.com/sambecker/exif-photo-blog"
+        href={TEMPLATE_REPO_URL}
         target="_blank"
         className={clsx(
           'flex items-center gap-0.5',
           'text-main hover:text-main',
-          'hover:underline',
+          'hover:text-medium active:text-dim',
         )}
       >
         <BiLogoGithub
           size={16}
           className="translate-y-[0.5px] hidden xs:inline-block"
         />
-        exif-photo-blog
+        {TEMPLATE_REPO_NAME}
       </Link>
     </span>
   );
