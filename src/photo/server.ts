@@ -1,31 +1,46 @@
 import {
   getExtensionFromStorageUrl,
   getIdFromStorageUrl,
-} from '@/services/storage';
-import { convertExifToFormData } from '@/photo/form';
+} from '@/platforms/storage';
+import { convertFormDataToPhotoDbInsert } from '@/photo/form';
 import {
+  FujifilmSimulation,
   getFujifilmSimulationFromMakerNote,
-  isExifForFujifilm,
-} from '@/vendors/fujifilm';
+} from '@/platforms/fujifilm/simulation';
 import { ExifData, ExifParserFactory } from 'ts-exif-parser';
 import { PhotoFormData } from './form';
-import { FilmSimulation } from '@/simulation';
 import sharp, { Sharp } from 'sharp';
-import { GEO_PRIVACY_ENABLED, PRESERVE_ORIGINAL_UPLOADS } from '@/site/config';
+import {
+  GEO_PRIVACY_ENABLED,
+  PRESERVE_ORIGINAL_UPLOADS,
+} from '@/app/config';
+import { isExifForFujifilm } from '@/platforms/fujifilm/server';
+import {
+  FujifilmRecipe,
+  getFujifilmRecipeFromMakerNote,
+} from '@/platforms/fujifilm/recipe';
+import {
+  getRecipeTitleForData,
+  updateAllMatchingRecipeTitles,
+} from './db/query';
+import { PhotoDbInsert } from '.';
+import { convertExifToFormData } from './form/server';
+import { getColorFieldsForPhotoForm } from './color/server';
+import exifr from 'exifr';
 
 const IMAGE_WIDTH_RESIZE = 200;
 const IMAGE_WIDTH_BLUR = 200;
 
 export const extractImageDataFromBlobPath = async (
   blobPath: string,
-  options?: {
+  options: {
     includeInitialPhotoFields?: boolean
     generateBlurData?: boolean
     generateResizedImage?: boolean
-  },
+  } = {},
 ): Promise<{
   blobId?: string
-  photoFormExif?: Partial<PhotoFormData>
+  formDataFromExif?: Partial<PhotoFormData>
   imageResizedBase64?: string
   shouldStripGpsData?: boolean
   fileBytes?: ArrayBuffer
@@ -35,7 +50,7 @@ export const extractImageDataFromBlobPath = async (
     includeInitialPhotoFields,
     generateBlurData,
     generateResizedImage,
-  } = options ?? {};
+  } = options;
 
   const url = decodeURIComponent(blobPath);
 
@@ -44,7 +59,9 @@ export const extractImageDataFromBlobPath = async (
   const extension = getExtensionFromStorageUrl(url);
 
   let exifData: ExifData | undefined;
-  let filmSimulation: FilmSimulation | undefined;
+  let exifrData: any | undefined;
+  let film: FujifilmSimulation | undefined;
+  let recipe: FujifilmRecipe | undefined;
   let blurData: string | undefined;
   let imageResizedBase64: string | undefined;
   let shouldStripGpsData = false;
@@ -65,6 +82,7 @@ export const extractImageDataFromBlobPath = async (
       // Data for form
       parser.enableBinaryFields(false);
       exifData = parser.parse();
+      exifrData = await exifr.parse(fileBytes, { xmp: true });
 
       // Capture film simulation for Fujifilm cameras
       if (isExifForFujifilm(exifData)) {
@@ -74,7 +92,8 @@ export const extractImageDataFromBlobPath = async (
         const exifDataBinary = parser.parse();
         const makerNote = exifDataBinary.tags?.MakerNote;
         if (Buffer.isBuffer(makerNote)) {
-          filmSimulation = getFujifilmSimulationFromMakerNote(makerNote);
+          film = getFujifilmSimulationFromMakerNote(makerNote);
+          recipe = getFujifilmRecipeFromMakerNote(makerNote);
         }
       }
 
@@ -97,10 +116,12 @@ export const extractImageDataFromBlobPath = async (
 
   if (error) { console.log(error); }
 
+  const colorFields = await getColorFieldsForPhotoForm(url);
+
   return {
     blobId,
     ...exifData && {
-      photoFormExif: {
+      formDataFromExif: {
         ...includeInitialPhotoFields && {
           hidden: 'false',
           favorite: 'false',
@@ -108,7 +129,8 @@ export const extractImageDataFromBlobPath = async (
           url,
         },
         ...generateBlurData && { blurData },
-        ...convertExifToFormData(exifData, filmSimulation),
+        ...convertExifToFormData(exifData, exifrData, film, recipe),
+        ...colorFields,
       },
     },
     imageResizedBase64,
@@ -120,17 +142,20 @@ export const extractImageDataFromBlobPath = async (
 
 const generateBase64 = async (
   image: ArrayBuffer,
-  middleware: (sharp: Sharp) => Sharp,
+  middleware?: (sharp: Sharp) => Sharp,
 ) => 
-  middleware(sharp(image))
+  (middleware ? middleware(sharp(image)) : sharp(image))
     .withMetadata()
     .toFormat('jpeg', { quality: 90 })
     .toBuffer()
     .then(data => `data:image/jpeg;base64,${data.toString('base64')}`);
 
-const resizeImage = async (image: ArrayBuffer) => 
+const resizeImage = async (
+  image: ArrayBuffer,
+  width = IMAGE_WIDTH_RESIZE,
+) => 
   generateBase64(image, sharp => sharp
-    .resize(IMAGE_WIDTH_RESIZE),
+    .resize(width),
   );
 
 const blurImage = async (image: ArrayBuffer) => 
@@ -140,10 +165,22 @@ const blurImage = async (image: ArrayBuffer) =>
     .blur(4),
   );
 
-export const resizeImageFromUrl = async (url: string) => 
+export const getImageBase64FromUrl = async (url: string) => 
   fetch(decodeURIComponent(url))
     .then(res => res.arrayBuffer())
-    .then(buffer => resizeImage(buffer))
+    .then(buffer => generateBase64(buffer))
+    .catch(e => {
+      console.log(`Error getting image base64 from URL (${url})`, e);
+      return '';
+    });
+
+export const resizeImageFromUrl = async (
+  url: string,
+  width?: number,
+) => 
+  fetch(decodeURIComponent(url))
+    .then(res => res.arrayBuffer())
+    .then(buffer => resizeImage(buffer, width))
     .catch(e => {
       console.log(`Error resizing image from URL (${url})`, e);
       return '';
@@ -184,3 +221,42 @@ export const removeGpsData = async (image: ArrayBuffer) =>
     })
     .toFormat('jpeg', { quality: PRESERVE_ORIGINAL_UPLOADS ? 95 : 80 })
     .toBuffer();
+
+export const convertFormDataToPhotoDbInsertAndLookupRecipeTitle =
+  async (...args: Parameters<typeof convertFormDataToPhotoDbInsert>):
+  Promise<ReturnType<typeof convertFormDataToPhotoDbInsert>> => {
+    const photo = convertFormDataToPhotoDbInsert(...args);
+
+    if (photo.recipeData && !photo.recipeTitle && photo.film) {
+      const recipeTitle = await getRecipeTitleForData(
+        photo.recipeData,
+        photo.film,
+      );
+      // Only replace recipe title when a new one is found
+      if (recipeTitle) {
+        photo.recipeTitle = recipeTitle;
+      }
+    }
+
+    return photo;
+  };
+
+export const propagateRecipeTitleIfNecessary = async (
+  formData: FormData,
+  photo: PhotoDbInsert,
+) => {
+  if (
+    formData.get('applyRecipeTitleGlobally') === 'true' &&
+    // Only propagate recipe title if set by user before lookup
+    formData.get('recipeTitle') &&
+    photo.recipeTitle &&
+    photo.recipeData &&
+    photo.film
+  ) {
+    await updateAllMatchingRecipeTitles(
+      photo.recipeTitle,
+      photo.recipeData,
+      photo.film,
+    );
+  }
+};

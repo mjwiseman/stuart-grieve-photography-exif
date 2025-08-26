@@ -1,23 +1,24 @@
 'use client';
 
-import { useAppState } from '@/state/AppState';
+import { useAppState } from '@/app/AppState';
 import { clsx } from 'clsx/lite';
-import { ReactNode } from 'react';
+import { HTMLAttributes } from 'react';
 
 export default function DivDebugBaselineGrid({
   children,
   className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   const { shouldShowBaselineGrid } = useAppState();
 
   return (
-    <div className={clsx(
-      className,
-      shouldShowBaselineGrid && 'bg-baseline-grid',
-    )}>
+    <div
+      {...props}
+      className={clsx(
+        shouldShowBaselineGrid && 'bg-baseline-grid',
+        className,
+      )}
+    >
       {children}
     </div>
   );

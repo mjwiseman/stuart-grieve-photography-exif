@@ -2,7 +2,7 @@
 
 import { ReactNode, useRef } from 'react';
 import { Variant, motion } from 'framer-motion';
-import { useAppState } from '@/state/AppState';
+import { useAppState } from '@/app/AppState';
 import usePrefersReducedMotion from '@/utility/usePrefersReducedMotion';
 
 const IGNORE_CAN_START = true;
@@ -48,8 +48,11 @@ function AnimateItems({
   const {
     hasLoaded,
     nextPhotoAnimation,
+    getNextPhotoAnimationId,
     clearNextPhotoAnimation,
   } = useAppState();
+
+  const nextPhotoAnimationId = useRef<string>(undefined);
 
   const prefersReducedMotion = usePrefersReducedMotion();
   
@@ -72,22 +75,22 @@ function AnimateItems({
 
   const getInitialVariant = (): Variant => {
     switch (typeResolved) {
-    case 'left': return {
-      opacity: 0,
-      transform: `translateX(${distanceOffset}px)`,
-    };
-    case 'right': return {
-      opacity: 0,
-      transform: `translateX(${-distanceOffset}px)`,
-    };
-    case 'bottom': return {
-      opacity: 0,
-      transform: `translateY(${distanceOffset}px)`,
-    };
-    default: return {
-      opacity: 0,
-      transform: `translateY(${distanceOffset}px) scale(${scaleOffset})`,
-    };
+      case 'left': return {
+        opacity: 0,
+        transform: `translateX(${distanceOffset}px)`,
+      };
+      case 'right': return {
+        opacity: 0,
+        transform: `translateX(${-distanceOffset}px)`,
+      };
+      case 'bottom': return {
+        opacity: 0,
+        transform: `translateY(${distanceOffset}px)`,
+      };
+      default: return {
+        opacity: 0,
+        transform: `translateY(${distanceOffset}px) scale(${scaleOffset})`,
+      };
     }
   };
 
@@ -104,9 +107,12 @@ function AnimateItems({
             },
           },
         } : undefined}
+      onAnimationStart={() => {
+        nextPhotoAnimationId.current = getNextPhotoAnimationId?.();
+      }}
       onAnimationComplete={() => {
         if (animateFromAppState) {
-          clearNextPhotoAnimation?.();
+          clearNextPhotoAnimation?.(nextPhotoAnimationId.current);
         }
         onAnimationComplete?.();
       }}
@@ -124,7 +130,7 @@ function AnimateItems({
           }}
           transition={{
             duration: durationResolved,
-            easing: 'easeOut',
+            ease: 'easeOut',
           }}
         >
           {item}

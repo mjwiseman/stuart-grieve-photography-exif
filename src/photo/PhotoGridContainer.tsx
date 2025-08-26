@@ -1,29 +1,34 @@
 'use client';
 
-import SiteGrid from '@/components/SiteGrid';
+import AppGrid from '@/components/AppGrid';
 import PhotoGrid from './PhotoGrid';
 import PhotoGridInfinite from './PhotoGridInfinite';
 import { clsx } from 'clsx/lite';
 import AnimateItems from '@/components/AnimateItems';
-import { JSX, ComponentProps, useCallback, useState } from 'react';
+import { ComponentProps, useCallback, useState, ReactNode } from 'react';
+import { GRID_SPACE_CLASSNAME } from '@/components';
+import { SortBy } from './sort';
 
 export default function PhotoGridContainer({
   cacheKey,
   photos,
   count,
-  tag,
-  camera,
-  simulation,
-  focal,
+  sortBy,
+  sortWithPriority,
+  excludeFromFeeds,
   animateOnFirstLoadOnly,
   header,
   sidebar,
   canSelect,
+  ...categories
 }: {
   cacheKey: string
   count: number
-  header?: JSX.Element
-  sidebar?: JSX.Element
+  sortBy?: SortBy
+  sortWithPriority?: boolean
+  excludeFromFeeds?: boolean
+  header?: ReactNode
+  sidebar?: ReactNode
 } & ComponentProps<typeof PhotoGrid>) {
   const [
     shouldAnimateDynamicItems,
@@ -33,10 +38,8 @@ export default function PhotoGridContainer({
   const onAnimationComplete = useCallback(() =>
     setShouldAnimateDynamicItems(true), []);
 
-  const initialOffset = photos.length;
-
   return (
-    <SiteGrid
+    <AppGrid
       contentMain={<div className={clsx(
         header && 'space-y-8 mt-1.5',
       )}>
@@ -46,33 +49,29 @@ export default function PhotoGridContainer({
             items={[header]}
             animateOnFirstLoadOnly
           />}
-        <div className="space-y-0.5 sm:space-y-1">
+        <div className={GRID_SPACE_CLASSNAME}>
           <PhotoGrid {...{
             photos,
-            tag,
-            camera,
-            simulation,
-            focal,
+            ...categories,
             animateOnFirstLoadOnly,
             onAnimationComplete,
             canSelect,
           }} />
-          {count > initialOffset &&
+          {count > photos.length &&
             <PhotoGridInfinite {...{
               cacheKey,
-              initialOffset,
+              initialOffset: photos.length,
+              sortBy,
+              sortWithPriority,
+              excludeFromFeeds,
+              ...categories,
               canStart: shouldAnimateDynamicItems,
-              tag,
-              camera,
-              simulation,
-              focal,
               animateOnFirstLoadOnly,
               canSelect,
             }} />}
         </div>
       </div>}
       contentSide={sidebar}
-      sideHiddenOnMobile
     />
   );
 }

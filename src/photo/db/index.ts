@@ -1,45 +1,64 @@
-import { PRIORITY_ORDER_ENABLED } from '@/site/config';
 import { parameterize } from '@/utility/string';
-import { PhotoSetCategory } from '..';
+import { PhotoSetCategory } from '../../category';
+import { Camera } from '@/camera';
+import { Lens } from '@/lens';
+import { APP_DEFAULT_SORT_BY, SortBy } from '../sort';
 
 export const GENERATE_STATIC_PARAMS_LIMIT = 1000;
 export const PHOTO_DEFAULT_LIMIT = 100;
 
-// Trim whitespace
-// Make lowercase
-// Replace spaces with dashes
-// Remove periods and commas
-const parameterizeForDb = (text: string) =>
-  `REPLACE(REPLACE(REPLACE(LOWER(TRIM(${text})), '.', ''), ',', ''), ' ', '-')`;
+// These must mirror utility/string.ts parameterization
+const CHARACTERS_TO_REMOVE = [',', '/'];
+const CHARACTERS_TO_REPLACE = ['+', '&', '|', ' '];
 
-export type GetPhotosOptions = {
-  sortBy?: 'createdAt' | 'createdAtAsc' | 'takenAt' | 'priority'
+const parameterizeForDb = (field: string) =>
+  `REGEXP_REPLACE(
+    REGEXP_REPLACE(
+      LOWER(TRIM(${field})),
+      '[${CHARACTERS_TO_REMOVE.join('')}]', '', 'g'
+    ),
+    '[${CHARACTERS_TO_REPLACE.join('')}]', '-', 'g'
+  )`;
+
+export type PhotoQueryOptions = {
+  sortBy?: SortBy
+  sortWithPriority?: boolean
   limit?: number
   offset?: number
   query?: string
+  maximumAspectRatio?: number
   takenBefore?: Date
   takenAfterInclusive?: Date
   updatedBefore?: Date
+  excludeFromFeeds?: boolean
   hidden?: 'exclude' | 'include' | 'only'
-} & PhotoSetCategory;
+} & Omit<PhotoSetCategory, 'camera' | 'lens'> & {
+  camera?: Partial<Camera>
+  lens?: Partial<Lens>
+};
 
-export const areOptionsSensitive = (options: GetPhotosOptions) =>
+export const areOptionsSensitive = (options: PhotoQueryOptions) =>
   options.hidden === 'include' || options.hidden === 'only';
 
 export const getWheresFromOptions = (
-  options: GetPhotosOptions,
+  options: PhotoQueryOptions,
   initialValuesIndex = 1,
 ) => {
   const {
     hidden = 'exclude',
+    excludeFromFeeds,
     takenBefore,
     takenAfterInclusive,
     updatedBefore,
     query,
+    maximumAspectRatio,
+    recent,
+    year,
     tag,
     camera,
     lens,
-    simulation,
+    film,
+    recipe,
     focal,
   } = options;
 
@@ -48,14 +67,17 @@ export const getWheresFromOptions = (
   let valuesIndex = initialValuesIndex;
 
   switch (hidden) {
-  case 'exclude':
-    wheres.push('hidden IS NOT TRUE');
-    break;
-  case 'only':
-    wheres.push('hidden IS TRUE');
-    break;
+    case 'exclude':
+      wheres.push('hidden IS NOT TRUE');
+      break;
+    case 'only':
+      wheres.push('hidden IS TRUE');
+      break;
   }
 
+  if (excludeFromFeeds) {
+    wheres.push('exclude_from_feeds IS NOT TRUE');
+  }
   if (takenBefore) {
     wheres.push(`taken_at < $${valuesIndex++}`);
     wheresValues.push(takenBefore.toISOString());
@@ -73,25 +95,51 @@ export const getWheresFromOptions = (
     wheres.push(`CONCAT(title, ' ', caption, ' ', semantic_description) ILIKE $${valuesIndex++}`);
     wheresValues.push(`%${query.toLocaleLowerCase()}%`);
   }
+  if (maximumAspectRatio) {
+    wheres.push(`aspect_ratio <= $${valuesIndex++}`);
+    wheresValues.push(maximumAspectRatio);
+  }
+  if (recent) {
+    // Newest upload must be within past 2 weeks
+    // eslint-disable-next-line max-len
+    wheres.push('(SELECT MAX(created_at) FROM photos) >= (now() - INTERVAL \'14 days\')');
+    // Selects must be within 1 week of newest upload
+    // eslint-disable-next-line max-len
+    wheres.push('created_at >= (SELECT MAX(created_at) - INTERVAL \'7 days\' FROM photos)');
+  }
+  if (year) {
+    wheres.push(`EXTRACT(YEAR FROM taken_at) = $${valuesIndex++}`);
+    wheresValues.push(year);
+  }
+  if (camera?.make) {
+    wheres.push(`${parameterizeForDb('make')}=$${valuesIndex++}`);
+    wheresValues.push(parameterize(camera.make));
+  }
+  if (camera?.model) {
+    wheres.push(`${parameterizeForDb('model')}=$${valuesIndex++}`);
+    wheresValues.push(parameterize(camera.model));
+  }
+  if (lens?.make) {
+    wheres.push(`${parameterizeForDb('lens_make')}=$${valuesIndex++}`);
+    wheresValues.push(parameterize(lens.make));
+  }
+  if (lens?.model) {
+    wheres.push(`${parameterizeForDb('lens_model')}=$${valuesIndex++}`);
+    // Ensure unique queries for lenses missing makes
+    if (!lens.make) { wheres.push('lens_make IS NULL'); }
+    wheresValues.push(parameterize(lens.model));
+  }
   if (tag) {
     wheres.push(`$${valuesIndex++}=ANY(tags)`);
     wheresValues.push(tag);
   }
-  if (camera) {
-    wheres.push(`${parameterizeForDb('make')}=$${valuesIndex++}`);
-    wheresValues.push(parameterize(camera.make, true));
-    wheres.push(`${parameterizeForDb('model')}=$${valuesIndex++}`);
-    wheresValues.push(parameterize(camera.model, true));
+  if (film) {
+    wheres.push(`film=$${valuesIndex++}`);
+    wheresValues.push(film);
   }
-  if (lens) {
-    wheres.push(`${parameterizeForDb('lens_make')}=$${valuesIndex++}`);
-    wheresValues.push(parameterize(lens.make, true));
-    wheres.push(`${parameterizeForDb('lens_model')}=$${valuesIndex++}`);
-    wheresValues.push(parameterize(lens.model, true));
-  }
-  if (simulation) {
-    wheres.push(`film_simulation=$${valuesIndex++}`);
-    wheresValues.push(simulation);
+  if (recipe) {
+    wheres.push(`recipe_title=$${valuesIndex++}`);
+    wheresValues.push(recipe);
   }
   if (focal) {
     wheres.push(`focal_length=$${valuesIndex++}`);
@@ -107,25 +155,43 @@ export const getWheresFromOptions = (
   };
 };
 
-export const getOrderByFromOptions = (options: GetPhotosOptions) => {
+export const getOrderByFromOptions = (options: PhotoQueryOptions) => {
   const {
-    sortBy = PRIORITY_ORDER_ENABLED ? 'priority' : 'takenAt',
+    sortBy = APP_DEFAULT_SORT_BY,
+    sortWithPriority,
   } = options;
 
   switch (sortBy) {
-  case 'createdAt':
-    return 'ORDER BY created_at DESC';
-  case 'createdAtAsc':
-    return 'ORDER BY created_at ASC';
-  case 'takenAt':
-    return 'ORDER BY taken_at DESC';
-  case 'priority':
-    return 'ORDER BY priority_order ASC, taken_at DESC';
+    case 'takenAt':
+      return sortWithPriority
+        ? 'ORDER BY priority_order ASC, taken_at DESC'
+        : 'ORDER BY taken_at DESC';
+    case 'takenAtAsc':
+      return sortWithPriority
+        ? 'ORDER BY priority_order ASC, taken_at ASC'
+        : 'ORDER BY taken_at ASC';
+    case 'createdAt':
+      return sortWithPriority
+        ? 'ORDER BY priority_order ASC, created_at DESC'
+        : 'ORDER BY created_at DESC';
+    case 'createdAtAsc':
+      return sortWithPriority
+        ? 'ORDER BY priority_order ASC, created_at ASC'
+        : 'ORDER BY created_at ASC';
+      // Add date sort to account for photos with same color sort
+    case 'color':
+      return sortWithPriority
+        ? 'ORDER BY priority_order ASC, color_sort DESC, taken_at DESC'
+        : 'ORDER BY color_sort DESC, taken_at DESC';
+    case 'colorAsc':
+      return sortWithPriority
+        ? 'ORDER BY priority_order ASC, color_sort ASC, taken_at ASC'
+        : 'ORDER BY color_sort ASC, taken_at ASC';
   }
 };
 
 export const getLimitAndOffsetFromOptions = (
-  options: GetPhotosOptions,
+  options: PhotoQueryOptions,
   initialValuesIndex = 1,
 ) => {
   const {

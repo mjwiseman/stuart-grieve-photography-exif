@@ -1,10 +1,11 @@
 import type { Photo } from '../photo';
-import { FaStar, FaTag } from 'react-icons/fa';
 import ImageCaption from './components/ImageCaption';
 import ImagePhotoGrid from './components/ImagePhotoGrid';
 import ImageContainer from './components/ImageContainer';
-import type { NextImageSize } from '@/services/next-image';
+import type { NextImageSize } from '@/platforms/next-image';
 import { formatTag, isTagFavs } from '@/tag';
+import IconTag from '@/components/icons/IconTag';
+import IconFavs from '@/components/icons/IconFavs';
 
 export default function TagImageResponse({
   tag,
@@ -20,11 +21,7 @@ export default function TagImageResponse({
   fontFamily: string
 }) {  
   return (
-    <ImageContainer {...{
-      width,
-      height,
-      ...photos.length === 0 && { background: 'black' },
-    }}>
+    <ImageContainer solidBackground={photos.length === 0}>
       <ImagePhotoGrid
         {...{
           photos,
@@ -37,24 +34,27 @@ export default function TagImageResponse({
         height,
         fontFamily,
         icon: isTagFavs(tag)
-          ? <FaStar
-            size={height * .066}
+          ? <span tw="text-amber-500 inline-flex ">
+            <IconFavs
+              size={height * .066}
+              style={{
+                // Fix horizontal distortion in icon size
+                width: height * .076,
+                marginRight: height * .015,
+                transform: `translateY(${-height * .0015}px)`,
+              }}
+              highlight
+            />
+          </span>
+          : <IconTag
+            size={height * .07}
             style={{
-              // Fix horizontal distortion in icon size
-              width: height * .076,
-              marginRight: height * .015,
-            }}
-          />
-          : <FaTag
-            size={height * .06}
-            style={{
-              transform: `translateY(${height * .006}px)`,
-              marginRight: height * .02,
+              transform: `translateY(${height * .004}px)`,
+              marginRight: height * .01,
             }}
           />,
-      }}>
-        {formatTag(tag).toLocaleUpperCase()}
-      </ImageCaption>
+        title: formatTag(tag).toLocaleUpperCase(),
+      }} />
     </ImageContainer>
   );
 }

@@ -1,4 +1,7 @@
+import { CategoryQueryMeta } from '@/category';
 import type { Photo } from '@/photo';
+import { isCameraMakeApple } from '@/platforms/apple';
+import { formatSonyModel, isMakeSony } from '@/platforms/sony';
 import { parameterize } from '@/utility/string';
 
 const CAMERA_PLACEHOLDER: Camera = { make: 'Camera', model: 'Model' };
@@ -16,31 +19,31 @@ export interface PhotoCameraProps {
   params: Promise<Camera & { photoId: string }>
 }
 
-export type CameraWithCount = {
+export type CameraWithMeta = {
   cameraKey: string
   camera: Camera
-  count: number
-}
+} & CategoryQueryMeta;
 
-export type Cameras = CameraWithCount[];
+export type Cameras = CameraWithMeta[];
 
-export const createCameraKey = ({ make, model }: Camera) =>
-  parameterize(`${make}-${model}`, true);
+// Support keys for make-only and model-only camera queries
+export const createCameraKey = ({ make, model }: Partial<Camera>) =>
+  parameterize(`${make ?? 'ANY'}-${model ?? 'ANY'}`);
 
-export const getCameraFromParams = ({
+export const formatCameraParams = ({
   make,
   model,
 }: {
   make: string,
   model: string,
 }): Camera => ({
-  make: parameterize(make, true),
-  model: parameterize(model, true),
+  make: parameterize(make),
+  model: parameterize(model),
 });
 
 export const sortCamerasWithCount = (
-  a: CameraWithCount,
-  b: CameraWithCount,
+  a: CameraWithMeta,
+  b: CameraWithMeta,
 ) => {
   const aText = formatCameraText(a.camera);
   const bText = formatCameraText(b.camera);
@@ -55,14 +58,8 @@ export const cameraFromPhoto = (
     ? { make: photo.make, model: photo.model }
     : fallback ?? CAMERA_PLACEHOLDER;
 
-const isCameraMakeApple = (make?: string) =>
-  make?.toLocaleLowerCase() === 'apple';
-
-export const isCameraApple = ({ make }: Camera) =>
-  isCameraMakeApple(make);
-
 export const formatCameraText = (
-  { make, model: modelRaw }: Camera,
+  { make, model: _model }: Camera,
   length:
     'long' |    // Unmodified make and model
     'medium' |  // Make and model, with modifiers removed
@@ -71,28 +68,28 @@ export const formatCameraText = (
 ) => {
   // Capture simple make without modifiers like 'Corporation' or 'Company'
   const makeSimple = make.match(/^(\S+)/)?.[1];
+  let model = isMakeSony(make) ? formatSonyModel(_model) : _model;
   const doesModelStartWithMake = (
     makeSimple &&
-    modelRaw.toLocaleLowerCase().startsWith(makeSimple.toLocaleLowerCase())
+    model.toLocaleLowerCase().startsWith(makeSimple.toLocaleLowerCase())
   );
-  let model = modelRaw;
   switch (length) {
-  case 'long':
-    return `${make} ${model}`;
-  case 'medium':
-    return doesModelStartWithMake || isCameraMakeApple(make)
-      ? model
-      : `${make} ${model}`;
-  case 'short':
-    model = doesModelStartWithMake
-      ? model.replace(makeSimple, '').trim()
-      : model;
-    if (
-      model.includes('iPhone') &&
+    case 'long':
+      return `${make} ${model}`;
+    case 'medium':
+      return doesModelStartWithMake || isCameraMakeApple(make)
+        ? model
+        : `${make} ${model}`;
+    case 'short':
+      model = doesModelStartWithMake
+        ? model.replace(makeSimple, '').trim()
+        : model;
+      if (
+        model.includes('iPhone') &&
       model.length > 9
-    ) {
-      model = model.replace(/iPhone\s*/i, '');
-    }
-    return model;
+      ) {
+        model = model.replace(/iPhone\s*/i, '');
+      }
+      return model;
   }
 };

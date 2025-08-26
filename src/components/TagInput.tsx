@@ -1,7 +1,15 @@
 import { AnnotatedTag } from '@/photo/form';
 import { convertStringToArray, parameterize } from '@/utility/string';
 import { clsx } from 'clsx/lite';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import MaskedScroll from './MaskedScroll';
 
 const KEY_KEYDOWN = 'keydown';
 const CREATE_LABEL = 'Create';
@@ -14,23 +22,33 @@ export default function TagInput({
   name,
   value = '',
   options = [],
+  defaultIcon,
   onChange,
+  showMenuOnDelete,
   className,
   readOnly,
   placeholder,
+  limit,
+  limitValidationMessage,
 }: {
   id?: string
   name: string
   value?: string
   options?: AnnotatedTag[]
+  defaultIcon?: ReactNode
   onChange?: (value: string) => void
+  showMenuOnDelete?: boolean
   className?: string
   readOnly?: boolean
   placeholder?: string
+  limit?: number
+  limitValidationMessage?: string
 }) {
+  const behaveAsDropdown = limit === 1;
+
   const containerRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const optionsRef = useRef<HTMLInputElement>(null);
+  const optionsRef = useRef<HTMLDivElement>(null);
 
   const [shouldShowMenu, setShouldShowMenu] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -44,14 +62,21 @@ export default function TagInput({
     convertStringToArray(value) ?? []
   , [value]);
 
+  const hasReachedLimit = useMemo(() =>
+    limit !== undefined &&
+    selectedOptions.length >= limit &&
+    !behaveAsDropdown
+  , [limit, behaveAsDropdown, selectedOptions]);
+
   const inputTextFormatted = parameterize(inputText);
   const isInputTextUnique =
     inputTextFormatted &&
     !optionValues.includes(inputTextFormatted) &&
     !selectedOptions.includes(inputTextFormatted);
 
-  const optionsFiltered = useMemo<AnnotatedTag[]>(() =>
-    (isInputTextUnique
+  const optionsFiltered = useMemo<AnnotatedTag[]>(() => hasReachedLimit
+    ? [{ value: limitValidationMessage ?? `Tag limit reached (${limit})` }]
+    : (isInputTextUnique
       ? [{ value: `${CREATE_LABEL} "${inputTextFormatted}"` }]
       : []
     ).concat(options
@@ -61,7 +86,15 @@ export default function TagInput({
           !inputTextFormatted ||
           value.includes(inputTextFormatted)
         )))
-  , [inputTextFormatted, isInputTextUnique, options, selectedOptions]);
+  , [
+    hasReachedLimit,
+    inputTextFormatted,
+    isInputTextUnique,
+    limit,
+    limitValidationMessage,
+    options,
+    selectedOptions,
+  ]);
 
   const hideMenu = useCallback((shouldBlurInput?: boolean) => {
     setShouldShowMenu(false);
@@ -81,15 +114,29 @@ export default function TagInput({
       .filter(option => !selectedOptions.includes(option));
 
     if (optionsToAdd.length > 0) {
-      onChange?.([
-        ...selectedOptions,
-        ...optionsToAdd,
-      ].join(','));
+      if (behaveAsDropdown) {
+        // If behaving as dropdown, replace contents on add
+        onChange?.(optionsToAdd[0]);
+      } else {
+        onChange?.([
+          ...selectedOptions,
+          ...optionsToAdd,
+        ].join(','));
+      }
     }
 
     setSelectedOptionIndex(undefined);
-    inputRef.current?.focus();
-  }, [onChange, selectedOptions]);
+    setInputText('');
+
+    if (
+      behaveAsDropdown ||
+      (limit !== undefined && limit - 1 >= selectedOptions.length)
+    ) {
+      hideMenu(true);
+    } else {
+      inputRef.current?.focus();
+    }
+  }, [limit, behaveAsDropdown, selectedOptions, onChange, hideMenu]);
 
   const removeOption = useCallback((option: string) => {
     onChange?.(selectedOptions.filter(o =>
@@ -103,7 +150,6 @@ export default function TagInput({
     if (inputText) {
       if (inputText.includes(',')) {
         addOptions(inputText.split(','));
-        setInputText('');
       } else {
         setShouldShowMenu(true);
       }
@@ -126,62 +172,66 @@ export default function TagInput({
     const listener = (e: KeyboardEvent) => {
       // Keys which always trap focus
       switch (e.key) {
-      case 'ArrowDown':
-      case 'ArrowUp':
-      case 'Escape':
-        e.stopImmediatePropagation();
-        e.preventDefault();
-      }
-      switch (e.key) {
-      case 'Enter':
-        // Only trap focus if there are options to select
-        // otherwise allow form to submit
-        if (shouldShowMenu && optionsFiltered.length > 0) {
+        case 'ArrowDown':
+        case 'ArrowUp':
+        case 'Escape':
           e.stopImmediatePropagation();
           e.preventDefault();
-          addOptions([optionsFiltered[selectedOptionIndex ?? 0].value]);
-          setInputText('');
-        }
-        break;
-      case 'ArrowDown':
-        if (shouldShowMenu) {
+      }
+      switch (e.key) {
+        case 'Enter':
+        // Only trap focus if there are options to select
+        // otherwise allow form to submit
+          if (
+            shouldShowMenu &&
+          optionsFiltered.length > 0
+          ) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            if (!hasReachedLimit) {
+              addOptions([optionsFiltered[selectedOptionIndex ?? 0].value]);
+            }
+          }
+          break;
+        case 'ArrowDown':
+          if (shouldShowMenu) {
+            setSelectedOptionIndex(i => {
+              if (i === undefined) {
+                return optionsFiltered.length > 1 ? 1 : 0;
+              } else if (i >= optionsFiltered.length - 1) {
+                return 0;
+              } else {
+                return i + 1;
+              }
+            });
+          } else {
+            setShouldShowMenu(true);
+          }
+          break;
+        case 'ArrowUp':
           setSelectedOptionIndex(i => {
-            if (i === undefined) {
-              return optionsFiltered.length > 1 ? 1 : 0;
-            } else if (i >= optionsFiltered.length - 1) {
-              return 0;
+            if (
+              document.activeElement === inputRef.current &&
+              optionsFiltered.length > 0
+            ) {
+              return optionsFiltered.length - 1;
+            } else if (i === undefined || i === 0) {
+              inputRef.current?.focus();
+              return undefined;
             } else {
-              return i + 1;
+              return i - 1;
             }
           });
-        } else {
-          setShouldShowMenu(true);
-        }
-        break;
-      case 'ArrowUp':
-        setSelectedOptionIndex(i => {
-          if (
-            document.activeElement === inputRef.current &&
-            optionsFiltered.length > 0
-          ) {
-            return optionsFiltered.length - 1;
-          } else if (i === undefined || i === 0) {
-            inputRef.current?.focus();
-            return undefined;
-          } else {
-            return i - 1;
+          break;
+        case 'Backspace':
+          if (inputText === '' && selectedOptions.length > 0) {
+            removeOption(selectedOptions[selectedOptions.length - 1]);
+            if (!showMenuOnDelete) { hideMenu(); }
           }
-        });
-        break;
-      case 'Backspace':
-        if (inputText === '' && selectedOptions.length > 0) {
-          removeOption(selectedOptions[selectedOptions.length - 1]);
-          hideMenu();
-        }
-        break;
-      case 'Escape':
-        hideMenu(true);
-        break;
+          break;
+        case 'Escape':
+          hideMenu(true);
+          break;
       }
     };
 
@@ -191,13 +241,29 @@ export default function TagInput({
   }, [
     inputText,
     removeOption,
+    showMenuOnDelete,
     hideMenu,
     selectedOptions,
     selectedOptionIndex,
     optionsFiltered,
     addOptions,
     shouldShowMenu,
+    hasReachedLimit,
+    limit,
   ]);
+
+  const renderTag = useCallback((value: string) => {
+    const option = options.find(o => o.value === value);
+    const icon = option?.icon ?? defaultIcon;
+    return <>
+      <span className="truncate">
+        {option?.label ?? value}
+      </span>
+      {icon && <span className="text-medium">
+        {icon}
+      </span>}
+    </>;
+  }, [options, defaultIcon]);
 
   return (
     <div
@@ -206,6 +272,12 @@ export default function TagInput({
       onFocus={() => setShouldShowMenu(true)}
       onBlur={e => {
         if (!e.currentTarget.contains(e.relatedTarget)) {
+          // Capture text on blur if limit not yet reached
+          if (inputText && !hasReachedLimit) {
+            addOptions([inputText]);
+          } else {
+            setInputText('');
+          }
           hideMenu();
         }
       }}
@@ -233,6 +305,7 @@ export default function TagInput({
           readOnly && 'bg-gray-100 dark:bg-gray-900 dark:text-gray-400',
         )}
       >
+        {/* Selected Options */}
         {selectedOptions
           .filter(Boolean)
           .map(option =>
@@ -241,6 +314,7 @@ export default function TagInput({
               role="button"
               aria-label={`Remove tag "${option}"`}
               className={clsx(
+                'inline-flex items-center gap-2 min-w-0',
                 'text-main',
                 'cursor-pointer select-none',
                 'whitespace-nowrap',
@@ -251,14 +325,14 @@ export default function TagInput({
               )}
               onClick={() => removeOption(option)}
             >
-              {option}
+              {renderTag(option)}
             </span>)}
         <input
           id={id}
           ref={inputRef}
           type="text"
           className={clsx(
-            'grow min-w-0! p-0! -my-2 text-xl',
+            'grow min-w-0! p-0! -my-2',
             'outline-hidden border-none',
             'placeholder:text-dim placeholder:text-[14px]',
             'placeholder:translate-x-[2px]',
@@ -272,6 +346,9 @@ export default function TagInput({
           readOnly={readOnly}
           placeholder={selectedOptions.length === 0 ? placeholder : undefined}
           onFocus={() => setSelectedOptionIndex(undefined)}
+          onClick={() => {
+            if (!shouldShowMenu) { setShouldShowMenu(true); }
+          }}
           aria-autocomplete="list"
           aria-expanded={shouldShowMenu}
           aria-haspopup="true"
@@ -280,65 +357,73 @@ export default function TagInput({
         />
         <input type="hidden" name={name} value={value} />
       </div>
-      {shouldShowMenu && optionsFiltered.length > 0 &&
-        <div className="relative">
+      <div className="relative">
+        {shouldShowMenu && optionsFiltered.length > 0 &&
           <div
-            id={ARIA_ID_TAG_OPTIONS}
-            role="listbox"
-            ref={optionsRef}
             className={clsx(
-              'control absolute top-0 mt-3 w-full z-10 px-1.5! py-1.5!',
-              'max-h-[8rem] overflow-y-auto',
-              'flex flex-col gap-y-1',
-              'text-xl shadow-lg dark:shadow-xl',
+              'component-surface',
+              'absolute top-3 w-full px-1.5 py-1.5',
+              'max-h-[8rem] overflow-y-auto flex flex-col',
+              'shadow-lg dark:shadow-xl',
             )}
           >
-            {optionsFiltered.map(({
-              value,
-              annotation,
-              annotationAria,
-            }, index) =>
-              <div
-                key={value}
-                role="option"
-                aria-selected={
-                  index === selectedOptionIndex ||
-                  (index === 0 && selectedOptionIndex === undefined)
-                }
-                tabIndex={0}
-                className={clsx(
-                  'text-base',
-                  'group flex items-center gap-1',
-                  'cursor-pointer select-none',
-                  'px-1.5 py-1 rounded-xs',
-                  'hover:bg-gray-100 dark:hover:bg-gray-800',
-                  'active:bg-gray-50 dark:active:bg-gray-900',
-                  'focus:bg-gray-100 dark:focus:bg-gray-800',
-                  index === 0 && selectedOptionIndex === undefined &&
-                    'bg-gray-100 dark:bg-gray-800',
-                  'outline-hidden',
-                )}
-                onClick={() => {
-                  addOptions([value]);
-                  setInputText('');
-                }}
-                onFocus={() => setSelectedOptionIndex(index)}
-              >
-                <span className="grow min-w-0 truncate">
-                  {value}
-                </span>
-                {annotation &&
-                  <span
-                    className="whitespace-nowrap text-dim text-sm"
-                    aria-label={annotationAria}
-                  >
-                    <span aria-hidden={Boolean(annotationAria)}>
-                      {annotation}
-                    </span>
-                  </span>}
-              </div>)}
-          </div>
-        </div>}
+            <MaskedScroll
+              id={ARIA_ID_TAG_OPTIONS}
+              role="listbox"
+              className="flex flex-col gap-y-1 text-xl"
+              ref={optionsRef}
+              fadeSize={16}
+            >
+              {/* Menu Options */}
+              {optionsFiltered.map(({
+                value,
+                annotation,
+                annotationAria,
+              }, index) =>
+                <div
+                  key={value}
+                  role="option"
+                  aria-selected={
+                    index === selectedOptionIndex ||
+                    (index === 0 && selectedOptionIndex === undefined)
+                  }
+                  tabIndex={0}
+                  className={clsx(
+                    'group flex items-center gap-2',
+                    'px-1.5 py-1 rounded-sm',
+                    'text-base select-none',
+                    hasReachedLimit ? 'cursor-not-allowed' : 'cursor-pointer',
+                    'hover:bg-gray-100 dark:hover:bg-gray-800',
+                    !hasReachedLimit &&
+                      'active:bg-gray-50 dark:active:bg-gray-900',
+                    'focus:bg-gray-100 dark:focus:bg-gray-800',
+                    index === 0 && selectedOptionIndex === undefined &&
+                      'bg-gray-100 dark:bg-gray-800',
+                    'outline-hidden',
+                  )}
+                  onClick={() => {
+                    if (!hasReachedLimit) {
+                      addOptions([value]);
+                    }
+                  }}
+                  onFocus={() => setSelectedOptionIndex(index)}
+                >
+                  <span className="grow inline-flex items-center gap-2 min-w-0">
+                    {renderTag(value)}
+                  </span>
+                  {annotation &&
+                    <span
+                      className="whitespace-nowrap text-dim text-sm"
+                      aria-label={annotationAria}
+                    >
+                      <span aria-hidden={Boolean(annotationAria)}>
+                        {annotation}
+                      </span>
+                    </span>}
+                </div>)}
+            </MaskedScroll>
+          </div>}
+      </div>
     </div>
   );
 }

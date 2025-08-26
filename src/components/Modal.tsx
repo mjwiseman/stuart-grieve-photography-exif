@@ -6,24 +6,28 @@ import { clsx } from 'clsx/lite';
 import useClickInsideOutside from '@/utility/useClickInsideOutside';
 import { useRouter } from 'next/navigation';
 import AnimateItems from './AnimateItems';
-import { PATH_ROOT } from '@/site/paths';
+import { PATH_ROOT } from '@/app/path';
 import usePrefersReducedMotion from '@/utility/usePrefersReducedMotion';
-import useMetaThemeColor from '@/site/useMetaThemeColor';
 import useEscapeHandler from '@/utility/useEscapeHandler';
+import { useTheme } from 'next-themes';
 
 export default function Modal({
   onClosePath,
   onClose,
   className,
   anchor = 'center',
+  container = true,
   children,
+  noPadding,
   fast,
 }: {
   onClosePath?: string
   onClose?: () => void
   className?: string
   anchor?: 'top' | 'center'
+  container?: boolean
   children: ReactNode
+  noPadding?: boolean
   fast?: boolean
 }) {
   const router = useRouter();
@@ -41,7 +45,7 @@ export default function Modal({
     }
   }, []);
 
-  useMetaThemeColor({ colorLight: '#333' });
+  const { resolvedTheme } = useTheme();
 
   useClickInsideOutside({
     htmlElements,
@@ -57,22 +61,29 @@ export default function Modal({
     },
   });
 
-  useEscapeHandler(onClose, true);
+  useEscapeHandler({
+    onKeyDown: onClose,
+    ignoreShouldRespondToKeyboardCommands: true,
+  });
 
   return (
     <motion.div
       className={clsx(
         'fixed inset-0 z-50 flex justify-center',
         anchor === 'top'
-          ? 'items-start pt-4 sm:pt-24'
+          ? 'items-start pt-4 sm:pt-12 lg:pt-24'
           : 'items-center',
-        'bg-black',
+        'bg-white dark:bg-black',
       )}
       initial={!prefersReducedMotion
-        ? { backgroundColor: 'rgba(0, 0, 0, 0)' }
+        ? { backgroundColor: resolvedTheme === 'dark'
+          ? 'rgba(0, 0, 0, 0)'
+          : 'rgba(255, 255, 255, 0)' }
         : false}
-      animate={{ backgroundColor: 'rgba(0, 0, 0, 0.80)' }}
-      transition={{ duration: 0.3, easing: 'easeOut' }}
+      animate={{ backgroundColor: resolvedTheme === 'dark'
+        ? 'rgba(0, 0, 0, 0.80)'
+        : 'rgba(255, 255, 255, 0.90)' }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
     >
       <AnimateItems
         duration={fast ? 0.1 : 0.3}
@@ -80,11 +91,15 @@ export default function Modal({
           ref={contentRef}
           key="modalContent"
           className={clsx(
-            'w-[calc(100vw-1.5rem)] sm:w-[min(540px,90vw)]',
-            'p-3 rounded-lg',
-            'md:p-4 md:rounded-xl',
-            'bg-white dark:bg-black',
-            'dark:border dark:border-gray-800',
+            ...container ? [
+              // "-2px" accounts for transparent outline
+              'w-[calc(100vw-1.5rem-2px)] sm:w-[min(540px,90vw)]',
+              !noPadding && 'p-2',
+              'rounded-xl outline-medium',
+              'bg-white dark:bg-black',
+              'shadow-gray-900 shadow-2xl/15',
+              'dark:shadow-black dark:shadow-2xl/100',
+            ] : [],
             className,
           )}
         >

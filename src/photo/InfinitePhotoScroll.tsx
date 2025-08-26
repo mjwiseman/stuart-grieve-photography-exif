@@ -8,15 +8,21 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import SiteGrid from '@/components/SiteGrid';
+import AppGrid from '@/components/AppGrid';
 import Spinner from '@/components/Spinner';
 import { getPhotosCachedAction, getPhotosAction } from '@/photo/actions';
-import { Photo, PhotoSetCategory } from '.';
+import { Photo } from '.';
+import { PhotoSetCategory } from '../category';
 import { clsx } from 'clsx/lite';
-import { useAppState } from '@/state/AppState';
-import { GetPhotosOptions } from './db';
+import { useAppState } from '@/app/AppState';
 import useVisible from '@/utility/useVisible';
-import { ADMIN_DB_OPTIMIZE_ENABLED } from '@/site/config';
+import { ADMIN_DB_OPTIMIZE_ENABLED } from '@/app/config';
+import { SortBy } from './sort';
+import { SWR_KEYS } from '@/swr';
+
+const SIZE_KEY_SEPARATOR = '__';
+const getSizeFromKey = (key: string) =>
+  parseInt(key.split(SIZE_KEY_SEPARATOR)[1]);
 
 export type RevalidatePhoto = (
   photoId: string,
@@ -28,9 +34,14 @@ export default function InfinitePhotoScroll({
   initialOffset,
   itemsPerPage,
   sortBy,
-  tag,
+  sortWithPriority,
+  excludeFromFeeds,
   camera,
-  simulation,
+  lens,
+  tag,
+  recipe,
+  film,
+  focal,
   wrapMoreButtonInGrid,
   useCachedPhotos = true,
   includeHiddenPhotos,
@@ -38,7 +49,9 @@ export default function InfinitePhotoScroll({
 }: {
   initialOffset: number
   itemsPerPage: number
-  sortBy?: GetPhotosOptions['sortBy']
+  sortBy?: SortBy
+  sortWithPriority?: boolean
+  excludeFromFeeds?: boolean
   cacheKey: string
   wrapMoreButtonInGrid?: boolean
   useCachedPhotos?: boolean
@@ -49,38 +62,47 @@ export default function InfinitePhotoScroll({
     revalidatePhoto?: RevalidatePhoto
   }) => ReactNode
 } & PhotoSetCategory) {
-  const { swrTimestamp, isUserSignedIn } = useAppState();
-
-  const key = `${swrTimestamp}-${cacheKey}`;
+  const { isUserSignedIn } = useAppState();
 
   const keyGenerator = useCallback(
     (size: number, prev: Photo[]) => prev && prev.length === 0
       ? null
-      : [key, size]
-    , [key]);
+      // eslint-disable-next-line max-len
+      : `${SWR_KEYS.INFINITE_PHOTO_SCROLL}-${cacheKey}${SIZE_KEY_SEPARATOR}${size}`
+    , [cacheKey]);
 
   const fetcher = useCallback((
-    [_key, size]: [string, number],
+    keyWithSize: string,
     warmOnly?: boolean,
   ) =>
     (useCachedPhotos ? getPhotosCachedAction : getPhotosAction)({
-      offset: initialOffset + size * itemsPerPage,
-      sortBy,
+      offset: initialOffset + getSizeFromKey(keyWithSize) * itemsPerPage,
+      sortBy, 
+      sortWithPriority,
+      excludeFromFeeds,
       limit: itemsPerPage,
       hidden: includeHiddenPhotos ? 'include' : 'exclude',
-      tag,
       camera,
-      simulation,
+      lens,
+      tag,
+      recipe,
+      film,
+      focal,
     }, warmOnly)
   , [
     useCachedPhotos,
     sortBy,
+    sortWithPriority,
+    excludeFromFeeds,
     initialOffset,
     itemsPerPage,
     includeHiddenPhotos,
-    tag,
     camera,
-    simulation,
+    lens,
+    tag,
+    recipe,
+    film,
+    focal,
   ]);
 
   const { data, isLoading, isValidating, error, mutate, size, setSize } =
@@ -97,7 +119,7 @@ export default function InfinitePhotoScroll({
 
   useEffect(() => {
     if (ADMIN_DB_OPTIMIZE_ENABLED) {
-      fetcher(['', 0], true);
+      fetcher(`${SIZE_KEY_SEPARATOR}0`, true);
     }
   }, [fetcher]);
 
@@ -137,6 +159,7 @@ export default function InfinitePhotoScroll({
   const renderMoreButton = () =>
     <div ref={buttonContainerRef}>
       <button
+        type="button"
         onClick={() => error ? mutate() : advance()}
         disabled={isLoading || isValidating}
         className={clsx(
@@ -160,7 +183,7 @@ export default function InfinitePhotoScroll({
         revalidatePhoto,
       })}
       {!isFinished && (wrapMoreButtonInGrid
-        ? <SiteGrid contentMain={renderMoreButton()} />
+        ? <AppGrid contentMain={renderMoreButton()} />
         : renderMoreButton())}
     </div>
   );
