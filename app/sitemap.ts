@@ -3,6 +3,7 @@ import { getDataForCategoriesCached } from '@/category/cache';
 import {
   ABSOLUTE_PATH_FULL,
   ABSOLUTE_PATH_GRID,
+  ABSOLUTE_PATH_PHOTOS,
   absolutePathForCamera,
   absolutePathForFilm,
   absolutePathForFocalLength,
@@ -74,10 +75,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: PRIORITY_HOME,
       lastModified: lastModifiedSite,
     },
-    // Grid or full
+    // Gallery home
+    {
+      url: ABSOLUTE_PATH_PHOTOS,
+      priority: PRIORITY_HOME_VIEW,
+      lastModified: lastModifiedSite,
+    },
+    // Non-default explicit gallery view
     {
       url: GRID_HOMEPAGE_ENABLED ? ABSOLUTE_PATH_FULL : ABSOLUTE_PATH_GRID,
-      priority: PRIORITY_HOME_VIEW,
+      priority: PRIORITY_CATEGORY_SPECIAL,
       lastModified: lastModifiedSite,
     },
     // Recents

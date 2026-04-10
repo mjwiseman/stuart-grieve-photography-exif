@@ -6,7 +6,7 @@ import {
 import { Metadata } from 'next/types';
 import { redirect } from 'next/navigation';
 import {
-  PATH_ROOT,
+  PATH_GALLERY_HOME,
   absolutePathForPhoto,
   absolutePathForPhotoImage,
 } from '@/app/path';
@@ -82,7 +82,7 @@ export default async function PhotoPage({
   const { photo, photos, photosGrid } =
     await getPhotosNearIdCachedCached(photoId);
 
-  if (!photo) { redirect(PATH_ROOT); }
+  if (!photo) { redirect(PATH_GALLERY_HOME); }
 
   return (
     <PhotoDetailPage {...{ photo, photos, photosGrid }} />

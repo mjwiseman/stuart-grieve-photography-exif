@@ -37,7 +37,7 @@ import {
   PATH_ADMIN_PHOTOS,
   PATH_ADMIN_RECIPES,
   PATH_ADMIN_TAGS,
-  PATH_ROOT,
+  PATH_GALLERY_HOME,
   pathForPhoto,
 } from '@/app/path';
 import {
@@ -371,7 +371,7 @@ export const deletePhotoAction = async (
     await deletePhoto(photoId).then(() => deleteFile(photoUrl));
     revalidateAllKeysAndPaths();
     if (shouldRedirect) {
-      redirect(PATH_ROOT);
+      redirect(PATH_GALLERY_HOME);
     }
   });
 

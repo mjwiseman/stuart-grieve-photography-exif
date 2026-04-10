@@ -3,7 +3,7 @@
 import { ComponentProps, useMemo } from 'react';
 import {
   getPathComponents,
-  PATH_ROOT,
+  PATH_GALLERY_HOME,
   pathForAdminPhotoEdit,
   pathForTag,
 } from '@/app/path';
@@ -60,7 +60,7 @@ export default function AdminPhotoMenu({
   const redirectPathOnPrivateToggle = isOnPhotoDetail
     ? photo.hidden
       ? pathForTag(TAG_PRIVATE)
-      : PATH_ROOT
+      : PATH_GALLERY_HOME
     : undefined;
 
 

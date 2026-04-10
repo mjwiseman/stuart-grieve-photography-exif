@@ -5,7 +5,7 @@ import YearOverview from '@/years/YearOverview';
 import { getPhotosYearDataCached } from '@/years/data';
 import { Metadata } from 'next/types';
 import { cache } from 'react';
-import { PATH_ROOT } from '@/app/path';
+import { PATH_GALLERY_HOME } from '@/app/path';
 import { redirect } from 'next/navigation';
 import { staticallyGenerateCategoryIfConfigured } from '@/app/static';
 import { getAppText } from '@/i18n/state/server';
@@ -72,7 +72,7 @@ export default async function YearPage({
     { count, dateRange },
   ] = await getPhotosYearDataCachedCached(year);
 
-  if (photos.length === 0) { redirect(PATH_ROOT); } 
+  if (photos.length === 0) { redirect(PATH_GALLERY_HOME); } 
 
   return (
     <YearOverview {...{

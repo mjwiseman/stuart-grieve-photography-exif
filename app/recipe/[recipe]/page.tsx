@@ -1,6 +1,6 @@
 import { INFINITE_SCROLL_GRID_INITIAL } from '@/photo';
 import { getUniqueRecipes } from '@/photo/db/query';
-import { PATH_ROOT } from '@/app/path';
+import { PATH_GALLERY_HOME } from '@/app/path';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
@@ -81,7 +81,7 @@ export default async function RecipePage({
     limit: INFINITE_SCROLL_GRID_INITIAL,
   });
 
-  if (photos.length === 0) { redirect(PATH_ROOT); }
+  if (photos.length === 0) { redirect(PATH_GALLERY_HOME); }
 
   return (
     <RecipeOverview {...{ recipe, photos, count, dateRange }} />

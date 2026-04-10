@@ -5,7 +5,7 @@ import FilmOverview from '@/film/FilmOverview';
 import { getPhotosFilmDataCached } from '@/film/data';
 import { Metadata } from 'next/types';
 import { cache } from 'react';
-import { PATH_ROOT } from '@/app/path';
+import { PATH_GALLERY_HOME } from '@/app/path';
 import { redirect } from 'next/navigation';
 import { staticallyGenerateCategoryIfConfigured } from '@/app/static';
 import { getAppText } from '@/i18n/state/server';
@@ -72,7 +72,7 @@ export default async function FilmPage({
     { count, dateRange },
   ] =  await getPhotosFilmDataCachedCached(film);
 
-  if (photos.length === 0) { redirect(PATH_ROOT); } 
+  if (photos.length === 0) { redirect(PATH_GALLERY_HOME); } 
 
   return (
     <FilmOverview {...{
