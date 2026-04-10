@@ -6,8 +6,8 @@ export const LANDING_CONTENT = {
     title: 'Tikus Photography',
     subtitle: 'Inspired by nature\'s grandeur',
     image: {
-      src: '/ai-home/hero-scotland.jpg',
-      alt: 'Scottish Highland landscape with dramatic sky over a serene loch',
+      src: '/stuart-home/hero-rannoch-moor.jpg',
+      alt: 'Snow-covered Rannoch Moor reflected in a calm loch',
     },
   },
   about: {
@@ -24,8 +24,8 @@ export const LANDING_CONTENT = {
     ].join(' '),
     guideSuffix: ', which allows me to share my knowledge of our capital.',
     image: {
-      src: '/ai-home/scotland-coast.jpg',
-      alt: 'Dramatic Scottish coastline with crashing waves',
+      src: '/stuart-home/about-st-abbs-lighthouse.jpg',
+      alt: 'St Abbs Lighthouse above a blue coastal sea',
     },
   },
   services: {
@@ -67,16 +67,16 @@ export const LANDING_CONTENT = {
       'time, a narrative whispered by the wind and light.',
     ].join(' '),
     images: [{
-      src: '/ai-home/scotland-winter.jpg',
-      alt: 'Snow-covered Highland mountains reflected in a still loch',
+      src: '/stuart-home/gallery-winter-stillness.jpg',
+      alt: 'The lone tree at Loch Lomond reflected in still blue water',
       title: 'Winter Stillness',
     }, {
-      src: '/ai-home/scotland-castle.jpg',
-      alt: 'Scottish castle ruins on an island in a loch',
+      src: '/stuart-home/gallery-ancient-guardians.jpg',
+      alt: 'Kilchurn Castle beside a loch with mountains behind it',
       title: 'Ancient Guardians',
     }, {
-      src: '/ai-home/scotland-coast.jpg',
-      alt: 'Wild Scottish coastline with dramatic waves',
+      src: '/stuart-home/gallery-coastal-drama.jpg',
+      alt: 'A footbridge over rough coastal water near the Bass Rock',
       title: 'Coastal Drama',
     }],
   },

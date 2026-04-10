@@ -91,7 +91,7 @@ export default function LandingPage() {
           <p className={clsx(
             landingFontSans,
             'mt-6 max-w-lg animate-[landing-fade-up_0.8s_ease-out_1.1s_both]',
-            'text-lg font-light text-white/90 md:text-xl',
+            'text-lg font-normal text-white drop-shadow-lg md:text-xl',
           )}>
             {hero.subtitle}
           </p>
