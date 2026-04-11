@@ -216,8 +216,8 @@ export default function NavClient({
                       'backdrop-blur-md',
                     ].join(' '),
                     [
-                      'dark:border-[#3b342f] dark:bg-[#17120f]/92',
-                      'dark:shadow-black/20',
+                      'dark:border-[#e3dacf] dark:bg-[#fbfaf7]/92',
+                      'dark:shadow-[0_14px_36px_rgba(22,18,14,0.08)]',
                     ].join(' '),
                     'md:w-[calc(100%+8px)] md:translate-x-[-4px] md:px-[4px]',
                   ].join(' '),
@@ -233,7 +233,7 @@ export default function NavClient({
                   'truncate overflow-hidden select-none',
                   '[font-family:var(--font-landing-serif)]',
                   'text-[1rem] tracking-[0.01em] text-[#22282e]',
-                  'sm:text-[1.125rem] dark:text-[#fbfaf7]',
+                  'sm:text-[1.125rem] dark:text-[#22282e]',
                 )}>
                   <Link href={PATH_ROOT}>{navTitle}</Link>
                 </div>
@@ -242,7 +242,7 @@ export default function NavClient({
                     'hidden sm:block truncate overflow-hidden',
                     [
                       '[font-family:var(--font-landing-sans)]',
-                      'leading-tight text-[#717274] dark:text-[#aaa39a]',
+                      'leading-tight text-[#717274] dark:text-[#717274]',
                     ].join(' '),
                   )}>
                     {navCaption}

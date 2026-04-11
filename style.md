@@ -94,6 +94,9 @@ shadow, or background change.
 - Non-landing app headers should use the same warm header palette rather than
   plain white/black chrome. Keep the Tikus serif brand visible and preserve
   the existing photo controls without redesigning the grid.
+- Public gallery pages should not switch to a black shell when the browser or
+  saved site theme is dark. Keep the warm neutral gallery background and header
+  treatment consistent with the landing page.
 
 ## Imagery
 

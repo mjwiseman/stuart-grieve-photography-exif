@@ -41,13 +41,13 @@ export default function SwitcherItem({
     `${widthClass} h-[28px]`,
     isInteractive && 'cursor-pointer',
     isInteractive && 'hover:bg-[#f0ebe5] active:bg-[#e7d8c5]/70',
-    isInteractive && 'dark:hover:bg-[#221d19] dark:active:bg-[#2a2420]',
+    isInteractive && 'dark:hover:bg-[#f0ebe5] dark:active:bg-[#e7d8c5]/70',
     active
-      ? 'text-[#22282e] dark:text-[#fbfaf7]'
-      : 'text-[#9a8f84] dark:text-[#82786f]',
+      ? 'text-[#22282e] dark:text-[#22282e]'
+      : 'text-[#9a8f84] dark:text-[#9a8f84]',
     active
-      ? 'hover:text-[#22282e] dark:hover:text-[#fbfaf7]'
-      : 'hover:text-[#717274] dark:hover:text-[#aaa39a]',
+      ? 'hover:text-[#22282e] dark:hover:text-[#22282e]'
+      : 'hover:text-[#717274] dark:hover:text-[#717274]',
     classNameProp,
   );
 

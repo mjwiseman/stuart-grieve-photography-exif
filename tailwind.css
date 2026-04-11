@@ -121,7 +121,7 @@ html {
 /* Text */
 @utility text-main {
   @apply
-    text-dark dark:text-light
+    text-[#22282e] dark:text-[#22282e]
 }
 @utility text-invert {
   @apply
@@ -129,23 +129,23 @@ html {
 }
 @utility text-medium {
   @apply
-    text-[#717274] dark:text-[#aaa39a]
+    text-[#717274] dark:text-[#717274]
 }
 @utility text-dim {
   @apply
-    text-[#9a8f84] dark:text-[#82786f]
+    text-[#9a8f84] dark:text-[#9a8f84]
 }
 @utility text-extra-dim {
   @apply
-    text-[#c6bbae]/80 dark:text-[#82786f]/55
+    text-[#c6bbae]/80 dark:text-[#c6bbae]/80
 }
 @utility text-extra-extra-dim {
   @apply
-    text-[#e8ded2] dark:text-[#2b2521]
+    text-[#e8ded2] dark:text-[#e8ded2]
 }
 @utility text-icon {
   @apply
-    text-[#22282e] dark:text-[#fbfaf7]
+    text-[#22282e] dark:text-[#22282e]
 }
 @utility text-error {
   @apply
@@ -154,40 +154,40 @@ html {
 /* Rules */
 @utility border-main {
   @apply
-    border border-[#e3dacf] dark:border-[#3b342f]
+    border border-[#e3dacf] dark:border-[#e3dacf]
 }
 @utility divide-main {
   @apply
-    divide-[#d8cdc0] dark:divide-[#3b342f]
+    divide-[#d8cdc0] dark:divide-[#d8cdc0]
 }
 @utility border-medium {
   @apply
-    border border-[#ddd2c5] dark:border-[#2f2925]
+    border border-[#ddd2c5] dark:border-[#ddd2c5]
 }
 @utility outline-medium {
   @apply
-    outline outline-[#ddd2c5] dark:outline-[#2f2925]
+    outline outline-[#ddd2c5] dark:outline-[#ddd2c5]
 }
 @utility divide-medium {
   @apply
-    divide-[#ddd2c5] dark:divide-[#2f2925]
+    divide-[#ddd2c5] dark:divide-[#ddd2c5]
 }
 /* Background */
 @utility bg-main {
   @apply
-    bg-[#fbfaf7] dark:bg-[#17120f]
+    bg-[#fbfaf7] dark:bg-[#fbfaf7]
 }
 @utility bg-medium {
   @apply
-    bg-[#e7d8c5] dark:bg-[#2a2420]
+    bg-[#e7d8c5] dark:bg-[#e7d8c5]
 }
 @utility bg-dim {
   @apply
-    bg-[#f0ebe5] dark:bg-[#221d19]
+    bg-[#f0ebe5] dark:bg-[#f0ebe5]
 }
 @utility bg-extra-dim {
   @apply
-    bg-[#faf8f4] dark:bg-[#1d1815]
+    bg-[#faf8f4] dark:bg-[#faf8f4]
 }
 @utility bg-content {
   @apply
