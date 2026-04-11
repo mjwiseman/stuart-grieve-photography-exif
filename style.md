@@ -91,6 +91,9 @@ shadow, or background change.
 - Mobile nav uses a simple hamburger and a warm translucent dropdown.
 - `Gallery` in the landing nav should link to the real photo archive at
   `/photos`, not just the landing-page preview section.
+- Non-landing app headers should use the same warm header palette rather than
+  plain white/black chrome. Keep the Tikus serif brand visible and preserve
+  the existing photo controls without redesigning the grid.
 
 ## Imagery
 

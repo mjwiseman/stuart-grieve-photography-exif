@@ -113,10 +113,10 @@ html {
 
 /* Text Primitives */
 @utility text-dark {
-  @apply text-gray-900
+  @apply text-[#22282e]
 }
 @utility text-light {
-  @apply text-gray-100
+  @apply text-[#fbfaf7]
 }
 /* Text */
 @utility text-main {
@@ -129,23 +129,23 @@ html {
 }
 @utility text-medium {
   @apply
-    text-gray-500 dark:text-gray-400
+    text-[#717274] dark:text-[#aaa39a]
 }
 @utility text-dim {
   @apply
-    text-gray-400 dark:text-gray-500
+    text-[#9a8f84] dark:text-[#82786f]
 }
 @utility text-extra-dim {
   @apply
-    text-gray-400/80 dark:text-gray-400/50
+    text-[#c6bbae]/80 dark:text-[#82786f]/55
 }
 @utility text-extra-extra-dim {
   @apply
-    text-gray-200 dark:text-gray-800
+    text-[#e8ded2] dark:text-[#2b2521]
 }
 @utility text-icon {
   @apply
-    text-gray-800 dark:text-gray-200
+    text-[#22282e] dark:text-[#fbfaf7]
 }
 @utility text-error {
   @apply
@@ -154,40 +154,40 @@ html {
 /* Rules */
 @utility border-main {
   @apply
-    border border-gray-200 dark:border-gray-700
+    border border-[#e3dacf] dark:border-[#3b342f]
 }
 @utility divide-main {
   @apply
-    divide-gray-400/25 dark:divide-gray-700
+    divide-[#d8cdc0] dark:divide-[#3b342f]
 }
 @utility border-medium {
   @apply
-    border border-gray-400/25 dark:border-gray-800
+    border border-[#ddd2c5] dark:border-[#2f2925]
 }
 @utility outline-medium {
   @apply
-    outline outline-gray-400/25 dark:outline-gray-800
+    outline outline-[#ddd2c5] dark:outline-[#2f2925]
 }
 @utility divide-medium {
   @apply
-    divide-gray-400/25 dark:divide-gray-800
+    divide-[#ddd2c5] dark:divide-[#2f2925]
 }
 /* Background */
 @utility bg-main {
   @apply
-    bg-white dark:bg-black
+    bg-[#fbfaf7] dark:bg-[#17120f]
 }
 @utility bg-medium {
   @apply
-    bg-gray-200 dark:bg-gray-700/65
+    bg-[#e7d8c5] dark:bg-[#2a2420]
 }
 @utility bg-dim {
   @apply
-    bg-gray-100 dark:bg-gray-800/70
+    bg-[#f0ebe5] dark:bg-[#221d19]
 }
 @utility bg-extra-dim {
   @apply
-    bg-gray-50 dark:bg-gray-900/40
+    bg-[#faf8f4] dark:bg-[#1d1815]
 }
 @utility bg-content {
   @apply
@@ -196,7 +196,7 @@ html {
 }
 @utility bg-invert {
   @apply
-    bg-gray-900 dark:bg-gray-100
+    bg-[#22282e] dark:bg-[#fbfaf7]
 }
 /* Baseline Grid */
 @utility space-y-baseline {

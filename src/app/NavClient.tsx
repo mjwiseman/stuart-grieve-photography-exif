@@ -209,38 +209,50 @@ export default function NavClient({
                     'bg-[#f6f0e8]/96 px-3 py-4 backdrop-blur-xl lg:px-6',
                   ].join(' ')
                   : [
-                    'w-full flex items-center bg-main',
+                    'w-full flex items-center justify-between gap-4',
+                    [
+                      'border-b border-[#e3dacf] bg-[#fbfaf7]/92',
+                      'px-3 py-4 shadow-[0_14px_36px_rgba(22,18,14,0.08)]',
+                      'backdrop-blur-md',
+                    ].join(' '),
+                    [
+                      'dark:border-[#3b342f] dark:bg-[#17120f]/92',
+                      'dark:shadow-black/20',
+                    ].join(' '),
                     'md:w-[calc(100%+8px)] md:translate-x-[-4px] md:px-[4px]',
                   ].join(' '),
                 !isLandingPage && NAV_HEIGHT_CLASS,
                 // Enlarge nav to ensure it fully masks underlying content
                 classNameStickyNav,
               )}>
-              <AppViewSwitcher
-                currentSelection={switcherSelectionForPath()}
-                className="translate-x-[-1px]"
-                animate={hasLoadedWithAnimations && isNavVisible}
-              />
               <div className={clsx(
-                'grow text-right min-w-0',
+                'min-w-0',
                 'translate-y-[-1px]',
               )}>
                 <div className={clsx(
                   'truncate overflow-hidden select-none',
                   '[font-family:var(--font-landing-serif)]',
-                  'text-[0.9rem] tracking-[0.01em] text-[#17120f]',
-                  'sm:text-[1rem]',
+                  'text-[1rem] tracking-[0.01em] text-[#22282e]',
+                  'sm:text-[1.125rem] dark:text-[#fbfaf7]',
                 )}>
                   <Link href={PATH_ROOT}>{navTitle}</Link>
                 </div>
                 {navCaption &&
                   <div className={clsx(
                     'hidden sm:block truncate overflow-hidden',
-                    'leading-tight text-dim',
+                    [
+                      '[font-family:var(--font-landing-sans)]',
+                      'leading-tight text-[#717274] dark:text-[#aaa39a]',
+                    ].join(' '),
                   )}>
                     {navCaption}
                   </div>}
               </div>
+              <AppViewSwitcher
+                currentSelection={switcherSelectionForPath()}
+                className="shrink-0"
+                animate={hasLoadedWithAnimations && isNavVisible}
+              />
             </nav>]
             : []}
         />
