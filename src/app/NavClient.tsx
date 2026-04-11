@@ -41,7 +41,7 @@ const LANDING_LINKS = [{
   href: '#services',
 }, {
   label: 'Gallery',
-  href: '#gallery',
+  href: PATH_GALLERY_HOME,
 }, {
   label: 'Contact',
   href: '#contact',
