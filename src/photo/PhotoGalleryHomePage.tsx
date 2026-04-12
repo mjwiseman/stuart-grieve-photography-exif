@@ -10,6 +10,7 @@ import PhotoGridPage from '@/photo/PhotoGridPage';
 import PhotosEmptyState from '@/photo/PhotosEmptyState';
 import { cache } from 'react';
 import { Metadata } from 'next/types';
+import { PATH_GALLERY_HOME } from '@/app/path';
 
 const getGalleryHomePhotosCached = cache(() => getPhotos(getFeedQueryOptions({
   isGrid: GRID_HOMEPAGE_ENABLED,
@@ -18,13 +19,31 @@ const getGalleryHomePhotosCached = cache(() => getPhotos(getFeedQueryOptions({
 export async function generatePhotoGalleryHomeMetadata(): Promise<Metadata> {
   const photos = await getGalleryHomePhotosCached()
     .catch(() => []);
+  const title = 'Photos | Tikus Photography by Stuart Grieve';
+  const description = [
+    'Browse the Tikus Photography archive by Stuart Grieve, featuring',
+    'Scottish landscape photographs, camera details, locations, and tagged',
+    'photo sets.',
+  ].join(' ');
+  const photoMeta = generateOgImageMetaForPhotos(photos);
   return {
-    title: 'Photos | Stuart Grieve Photography',
-    description: [
-      'Browse the Stuart Grieve Photography archive, including recent',
-      'Scottish landscape photographs, camera details, and tagged photo sets.',
-    ].join(' '),
-    ...generateOgImageMetaForPhotos(photos),
+    title,
+    description,
+    alternates: {
+      canonical: PATH_GALLERY_HOME,
+    },
+    openGraph: {
+      ...(photoMeta.openGraph ?? {}),
+      title,
+      description,
+      type: 'website',
+      url: PATH_GALLERY_HOME,
+    },
+    twitter: {
+      ...(photoMeta.twitter ?? {}),
+      title,
+      description,
+    },
   };
 }
 

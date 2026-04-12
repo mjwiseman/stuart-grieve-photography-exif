@@ -4,19 +4,24 @@ import { ABSOLUTE_PATH_HOME_IMAGE } from '@/app/path';
 
 export const maxDuration = 60;
 
-const title = 'Tikus Photography | Scottish Landscape Photography';
+const title = 'Tikus Photography | Stuart Grieve Photography';
 const description = [
-  'Scottish landscape photography shaped by weather, place, and',
-  'atmosphere, with a quieter view of Scotland beyond the obvious',
-  'locations.',
+  'Scottish landscape photography by Stuart Grieve, presented as Tikus',
+  'Photography: quiet views of Scotland, commissions, guided tours, and photo',
+  'archive.',
 ].join(' ');
 
 export const metadata: Metadata = {
   title,
   description,
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title,
     description,
+    type: 'website',
+    url: '/',
     images: ABSOLUTE_PATH_HOME_IMAGE,
   },
   twitter: {
