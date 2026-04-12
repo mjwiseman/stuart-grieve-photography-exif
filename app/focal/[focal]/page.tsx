@@ -3,7 +3,7 @@ import FocalLengthOverview from '@/focal/FocalLengthOverview';
 import { getPhotosFocalLengthDataCached } from '@/focal/data';
 import { INFINITE_SCROLL_GRID_INITIAL } from '@/photo';
 import { getUniqueFocalLengths } from '@/photo/db/query';
-import { PATH_ROOT } from '@/app/path';
+import { PATH_GALLERY_HOME } from '@/app/path';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
@@ -80,7 +80,7 @@ export default async function TagPage({
     { count, dateRange },
   ] = await getPhotosFocalDataCachedCached(focal);
 
-  if (photos.length === 0) { redirect(PATH_ROOT); }
+  if (photos.length === 0) { redirect(PATH_GALLERY_HOME); }
 
   return (
     <FocalLengthOverview {...{ focal, photos, count, dateRange }} />

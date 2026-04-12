@@ -1,6 +1,6 @@
 import { INFINITE_SCROLL_GRID_INITIAL } from '@/photo';
 import { getUniqueTags } from '@/photo/db/query';
-import { PATH_ROOT } from '@/app/path';
+import { PATH_GALLERY_HOME } from '@/app/path';
 import { generateMetaForTag } from '@/tag';
 import TagOverview from '@/tag/TagOverview';
 import { getPhotosTagDataCached } from '@/tag/data';
@@ -76,7 +76,7 @@ export default async function TagPage({
     { count, dateRange },
   ] = await getPhotosTagDataCachedCached(tag);
 
-  if (photos.length === 0) { redirect(PATH_ROOT); }
+  if (photos.length === 0) { redirect(PATH_GALLERY_HOME); }
 
   return (
     <TagOverview {...{ tag, photos, count, dateRange }} />

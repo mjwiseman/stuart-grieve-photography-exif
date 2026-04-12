@@ -20,6 +20,7 @@ import {
   PATH_ADMIN_RECIPES,
   PATH_ADMIN_TAGS,
   PATH_ADMIN_UPLOADS,
+  PATH_GALLERY_HOME,
   PATH_FULL_INFERRED,
   PATH_GRID_INFERRED,
   PATH_SIGN_IN,
@@ -575,22 +576,23 @@ export default function CommandKClient({
   };
 
   const pageFull: CommandKItem = {
-    label: GRID_HOMEPAGE_ENABLED
-      ? appText.nav.full
-      : `${appText.nav.full} (${appText.nav.home})`,
+    label: appText.nav.full,
     path: PATH_FULL_INFERRED,
   };
 
   const pageGrid: CommandKItem = {
-    label: GRID_HOMEPAGE_ENABLED
-      ? `${appText.nav.grid} (${appText.nav.home})`
-      : appText.nav.grid,
+    label: appText.nav.grid,
     path: PATH_GRID_INFERRED,
   };
 
+  const pagePhotos: CommandKItem = {
+    label: 'Photos',
+    path: PATH_GALLERY_HOME,
+  };
+
   const pageItems: CommandKItem[] = GRID_HOMEPAGE_ENABLED
-    ? [pageGrid, pageFull]
-    : [pageFull, pageGrid];
+    ? [pagePhotos, pageGrid, pageFull]
+    : [pagePhotos, pageFull, pageGrid];
 
   const sectionPages: CommandKSection = {
     heading: appText.cmdk.pages,

@@ -8,6 +8,7 @@ import {
   PARAM_SORT_TYPE_COLOR,
   PARAM_SORT_TYPE_TAKEN_AT,
   PARAM_SORT_TYPE_UPLOADED_AT,
+  PATH_PHOTOS,
   PATH_FULL_INFERRED,
   PATH_GRID_INFERRED,
 } from '@/app/path';
@@ -99,15 +100,22 @@ export const getSortOptionsFromParams = async (
 };
 
 const getPathSortComponents = (pathname: string) => {
-  const [_, gridOrFull, sortType, sortOrder] = pathname.split('/');
+  const [_, first, sortType, sortOrder] = pathname.split('/');
+  const isGalleryHome = first === PATH_PHOTOS.slice(1);
   const { sortBy } = _getSortOptionsFromParams(sortType, sortOrder);
   return {
-    gridOrFull: gridOrFull || (GRID_HOMEPAGE_ENABLED
-      ? 'grid'
-      : 'full'
-    ),
-    sortType: sortType || DEFAULT_SORT_TYPE,
-    sortOrder: sortOrder || DEFAULT_SORT_ORDER,
+    gridOrFull: !first || isGalleryHome
+      ? (GRID_HOMEPAGE_ENABLED
+        ? 'grid'
+        : 'full'
+      )
+      : first,
+    sortType: isGalleryHome
+      ? DEFAULT_SORT_TYPE
+      : sortType || DEFAULT_SORT_TYPE,
+    sortOrder: isGalleryHome
+      ? DEFAULT_SORT_ORDER
+      : sortOrder || DEFAULT_SORT_ORDER,
     sortBy,
   };
 };

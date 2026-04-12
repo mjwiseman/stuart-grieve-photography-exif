@@ -74,9 +74,21 @@ export const VERCEL_BYPASS_SECRET = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 // DOMAIN
 
+const PROJECT_PRODUCTION_DOMAIN = 'photos.stuartgrieve.com';
+const PROJECT_SITE_TITLE = 'Tikus Photography | Stuart Grieve Photography';
+const PROJECT_SITE_DESCRIPTION = [
+  'Scottish landscape photography by Stuart Grieve, presented as Tikus',
+  'Photography: quiet views of Scotland, commissions, guided tours, and photo',
+  'archive.',
+].join(' ');
+const PROJECT_NAV_TITLE = 'Tikus Photography';
+
 // User-facing domain, potential site title
 const SITE_DOMAIN =
   process.env.NEXT_PUBLIC_DOMAIN ||
+  (process.env.NODE_ENV === 'production'
+    ? PROJECT_PRODUCTION_DOMAIN
+    : undefined) ||
   // Legacy environment variable
   process.env.NEXT_PUBLIC_SITE_DOMAIN ||
   VERCEL_PRODUCTION_URL ||
@@ -119,6 +131,9 @@ export const NAV_CAPTION =
 
 export const META_TITLE =
   process.env.NEXT_PUBLIC_META_TITLE ||
+  (process.env.NODE_ENV === 'production'
+    ? PROJECT_SITE_TITLE
+    : undefined) ||
   // Legacy environment variable
   process.env.NEXT_PUBLIC_SITE_TITLE ||
   CUSTOM_NAV_TITLE ||
@@ -136,11 +151,17 @@ export const IS_META_DESCRIPTION_CONFIGURED =
 
 export const META_DESCRIPTION =
   process.env.NEXT_PUBLIC_META_DESCRIPTION ||
+  (process.env.NODE_ENV === 'production'
+    ? PROJECT_SITE_DESCRIPTION
+    : undefined) ||
   NAV_CAPTION ||
   SITE_DOMAIN_SHORT;
 
 export const NAV_TITLE =
   CUSTOM_NAV_TITLE ||
+  (process.env.NODE_ENV === 'production'
+    ? PROJECT_NAV_TITLE
+    : undefined) ||
   SITE_DOMAIN_SHORT ||
   META_TITLE;
 
@@ -385,6 +406,7 @@ export const APP_CONFIGURATION = {
   domain: SITE_DOMAIN_SHORT,
   hasDomain: Boolean(
     process.env.NEXT_PUBLIC_DOMAIN ||
+    (process.env.NODE_ENV === 'production' && PROJECT_PRODUCTION_DOMAIN) ||
     // Legacy environment variable
     process.env.NEXT_PUBLIC_SITE_DOMAIN,
   ),

@@ -29,6 +29,7 @@ import ThemeColors from '@/app/ThemeColors';
 import AppTextProvider from '@/i18n/state/AppTextProvider';
 import SharedHoverProvider from '@/components/shared-hover/SharedHoverProvider';
 import { PATH_FEED_JSON, PATH_RSS_XML } from '@/app/path';
+import { landingSans, landingSerif } from '@/landing/fonts';
 
 import '../tailwind.css';
 
@@ -89,6 +90,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className={clsx(
+        landingSans.variable,
+        landingSerif.variable,
         // Center on large screens
         '3xl:flex flex-col items-center',
       )}>

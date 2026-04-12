@@ -8,7 +8,7 @@ import {
   getPhotosMetaCached,
   getPhotosNearIdCached,
 } from '@/photo/cache';
-import { PATH_ROOT, absolutePathForPhoto } from '@/app/path';
+import { PATH_GALLERY_HOME, absolutePathForPhoto } from '@/app/path';
 import { TAG_PRIVATE } from '@/tag';
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -62,7 +62,7 @@ export default async function PhotoTagPrivatePage({
   const { photo, photos, photosGrid, indexNumber } =
     await getPhotosNearIdCachedCached(photoId);
 
-  if (!photo) { redirect(PATH_ROOT); }
+  if (!photo) { redirect(PATH_GALLERY_HOME); }
 
   const { count, dateRange } = await getPhotosMetaCached({ hidden: 'only' });
 

@@ -96,19 +96,32 @@ html {
     80% { transform: rotate(-2.5deg) }
     100% { transform: rotate(0deg) }
   }
+
+  @keyframes landing-hero-scale {
+    0% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  @keyframes landing-fade-up {
+    0% { opacity: 0; transform: translateY(24px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes landing-fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
 }
 
 /* Text Primitives */
 @utility text-dark {
-  @apply text-gray-900
+  @apply text-[#22282e]
 }
 @utility text-light {
-  @apply text-gray-100
+  @apply text-[#fbfaf7]
 }
 /* Text */
 @utility text-main {
   @apply
-    text-dark dark:text-light
+    text-[#22282e] dark:text-[#22282e]
 }
 @utility text-invert {
   @apply
@@ -116,23 +129,23 @@ html {
 }
 @utility text-medium {
   @apply
-    text-gray-500 dark:text-gray-400
+    text-[#717274] dark:text-[#717274]
 }
 @utility text-dim {
   @apply
-    text-gray-400 dark:text-gray-500
+    text-[#9a8f84] dark:text-[#9a8f84]
 }
 @utility text-extra-dim {
   @apply
-    text-gray-400/80 dark:text-gray-400/50
+    text-[#c6bbae]/80 dark:text-[#c6bbae]/80
 }
 @utility text-extra-extra-dim {
   @apply
-    text-gray-200 dark:text-gray-800
+    text-[#e8ded2] dark:text-[#e8ded2]
 }
 @utility text-icon {
   @apply
-    text-gray-800 dark:text-gray-200
+    text-[#22282e] dark:text-[#22282e]
 }
 @utility text-error {
   @apply
@@ -141,40 +154,40 @@ html {
 /* Rules */
 @utility border-main {
   @apply
-    border border-gray-200 dark:border-gray-700
+    border border-[#e3dacf] dark:border-[#e3dacf]
 }
 @utility divide-main {
   @apply
-    divide-gray-400/25 dark:divide-gray-700
+    divide-[#d8cdc0] dark:divide-[#d8cdc0]
 }
 @utility border-medium {
   @apply
-    border border-gray-400/25 dark:border-gray-800
+    border border-[#ddd2c5] dark:border-[#ddd2c5]
 }
 @utility outline-medium {
   @apply
-    outline outline-gray-400/25 dark:outline-gray-800
+    outline outline-[#ddd2c5] dark:outline-[#ddd2c5]
 }
 @utility divide-medium {
   @apply
-    divide-gray-400/25 dark:divide-gray-800
+    divide-[#ddd2c5] dark:divide-[#ddd2c5]
 }
 /* Background */
 @utility bg-main {
   @apply
-    bg-white dark:bg-black
+    bg-[#fbfaf7] dark:bg-[#fbfaf7]
 }
 @utility bg-medium {
   @apply
-    bg-gray-200 dark:bg-gray-700/65
+    bg-[#e7d8c5] dark:bg-[#e7d8c5]
 }
 @utility bg-dim {
   @apply
-    bg-gray-100 dark:bg-gray-800/70
+    bg-[#f0ebe5] dark:bg-[#f0ebe5]
 }
 @utility bg-extra-dim {
   @apply
-    bg-gray-50 dark:bg-gray-900/40
+    bg-[#faf8f4] dark:bg-[#faf8f4]
 }
 @utility bg-content {
   @apply
@@ -183,7 +196,7 @@ html {
 }
 @utility bg-invert {
   @apply
-    bg-gray-900 dark:bg-gray-100
+    bg-[#22282e] dark:bg-[#fbfaf7]
 }
 /* Baseline Grid */
 @utility space-y-baseline {

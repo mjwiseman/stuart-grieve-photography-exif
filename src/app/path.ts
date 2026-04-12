@@ -8,20 +8,22 @@ import { Lens } from '@/lens';
 
 // Core
 export const PATH_ROOT                  = '/';
+export const PATH_PHOTOS                = '/photos';
 export const PATH_GRID                  = '/grid';
 export const PATH_FULL                  = '/full';
 export const PATH_ADMIN                 = '/admin';
 export const PATH_API                   = '/api';
 export const PATH_SIGN_IN               = '/sign-in';
 export const PATH_OG                    = '/og';
+export const PATH_GALLERY_HOME          = PATH_PHOTOS;
 
 // Core: inferred
 export const PATH_GRID_INFERRED = GRID_HOMEPAGE_ENABLED
-  ? PATH_ROOT
+  ? PATH_GALLERY_HOME
   : PATH_GRID;
 export const PATH_FULL_INFERRED = GRID_HOMEPAGE_ENABLED
   ? PATH_FULL
-  : PATH_ROOT;
+  : PATH_GALLERY_HOME;
 
 // Sort
 export const PARAM_SORT_TYPE_TAKEN_AT     = 'taken-at';
@@ -30,7 +32,7 @@ export const PARAM_SORT_TYPE_COLOR        = 'chromatic';
 export const PARAM_SORT_ORDER_DESCENDING  = 'descending';
 export const PARAM_SORT_ORDER_ASCENDING   = 'ascending';
 export const doesPathOfferSort = (pathname: string) =>
-  pathname === PATH_ROOT ||
+  pathname === PATH_GALLERY_HOME ||
   pathname.startsWith(PATH_GRID) ||
   pathname.startsWith(PATH_FULL);
 
@@ -104,6 +106,7 @@ export const PATHS_ADMIN = [
 
 export const PATHS_TO_CACHE = [
   PATH_ROOT,
+  PATH_PHOTOS,
   PATH_GRID,
   PATH_FULL,
   PATH_OG,
@@ -237,6 +240,9 @@ export const ABSOLUTE_PATH_GRID =
 
 export const ABSOLUTE_PATH_FULL =
   `${getBaseUrl()}${PATH_FULL}`;
+
+export const ABSOLUTE_PATH_PHOTOS =
+  `${getBaseUrl()}${PATH_PHOTOS}`;
 
 export const ABSOLUTE_PATH_FEED_JSON =
   `${getBaseUrl()}${PATH_FEED_JSON}`;
@@ -378,6 +384,9 @@ export const checkPathPrefix = (pathname = '', prefix: string) =>
 export const isPathRoot = (pathname?: string) =>
   pathname === PATH_ROOT;
 
+export const isPathPhotos = (pathname?: string) =>
+  checkPathPrefix(pathname, PATH_PHOTOS);
+
 export const isPathGrid = (pathname?: string) =>
   checkPathPrefix(pathname, PATH_GRID);
 
@@ -386,6 +395,7 @@ export const isPathFull = (pathname?: string) =>
 
 export const isPathTopLevel = (pathname?: string) =>
   isPathRoot(pathname)||
+  isPathPhotos(pathname) ||
   isPathGrid(pathname) ||
   isPathFull(pathname);
 
@@ -496,7 +506,7 @@ export const getEscapePath = (pathname?: string) => {
     (focal && isPathFocalLength(pathname)) ||
     (recipe && isPathRecipe(pathname))
   ) {
-    return PATH_ROOT;
+    return PATH_GALLERY_HOME;
   } else if (recent && isPathRecentsPhoto(pathname)) {
     return PREFIX_RECENTS;
   } else if (year && isPathYearPhoto(pathname)) {

@@ -40,14 +40,14 @@ export default function SwitcherItem({
     'flex items-center justify-center',
     `${widthClass} h-[28px]`,
     isInteractive && 'cursor-pointer',
-    isInteractive && 'hover:bg-gray-100/60 active:bg-gray-100',
-    isInteractive && 'dark:hover:bg-gray-900/75 dark:active:bg-gray-900',
+    isInteractive && 'hover:bg-[#f0ebe5] active:bg-[#e7d8c5]/70',
+    isInteractive && 'dark:hover:bg-[#f0ebe5] dark:active:bg-[#e7d8c5]/70',
     active
-      ? 'text-black dark:text-white'
-      : 'text-gray-400 dark:text-gray-600',
+      ? 'text-[#22282e] dark:text-[#22282e]'
+      : 'text-[#9a8f84] dark:text-[#9a8f84]',
     active
-      ? 'hover:text-black dark:hover:text-white'
-      : 'hover:text-gray-700 dark:hover:text-gray-400',
+      ? 'hover:text-[#22282e] dark:hover:text-[#22282e]'
+      : 'hover:text-[#717274] dark:hover:text-[#717274]',
     classNameProp,
   );
 

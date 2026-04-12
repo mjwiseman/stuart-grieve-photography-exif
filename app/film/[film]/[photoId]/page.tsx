@@ -6,7 +6,7 @@ import {
 import { Metadata } from 'next/types';
 import { redirect } from 'next/navigation';
 import {
-  PATH_ROOT,
+  PATH_GALLERY_HOME,
   absolutePathForPhoto,
   absolutePathForPhotoImage,
 } from '@/app/path';
@@ -71,7 +71,7 @@ export default async function PhotoFilmPage({
   const { photo, photos, photosGrid, indexNumber } =
     await getPhotosNearIdCachedCached(photoId, film);
 
-  if (!photo) { redirect(PATH_ROOT); }
+  if (!photo) { redirect(PATH_GALLERY_HOME); }
 
   const { count, dateRange } = await getPhotosMetaCached({ film: film });
 
