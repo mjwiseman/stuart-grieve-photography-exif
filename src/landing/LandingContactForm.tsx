@@ -15,21 +15,64 @@ const fieldClassName = clsx(
   ].join(' '),
 );
 
+type ContactFormResponse = {
+  error?: string
+};
+
 export default function LandingContactForm() {
   const [sending, setSending] = useState(false);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     setSending(true);
-    setTimeout(() => {
-      setSending(false);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.get('name'),
+          email: formData.get('email'),
+          message: formData.get('message'),
+          website: formData.get('website'),
+          pageUrl: window.location.href,
+        }),
+      });
+      const result = await response
+        .json()
+        .catch(() => ({})) as ContactFormResponse;
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || 'We could not send your message. Please try again.',
+        );
+      }
+
       toast.success('Message sent! We\'ll be in touch soon.');
-      e.currentTarget.reset();
-    }, 1000);
+      form.reset();
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="absolute -left-[9999px]" aria-hidden="true">
+        <label>
+          Website
+          <input
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </label>
+      </div>
       <div>
         <label className={clsx(
           landingFontSans,
@@ -37,7 +80,13 @@ export default function LandingContactForm() {
         )}>
           Name
         </label>
-        <input required className={fieldClassName} />
+        <input
+          name="name"
+          required
+          autoComplete="name"
+          maxLength={120}
+          className={fieldClassName}
+        />
       </div>
       <div>
         <label className={clsx(
@@ -46,7 +95,14 @@ export default function LandingContactForm() {
         )}>
           Email
         </label>
-        <input type="email" required className={fieldClassName} />
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          maxLength={254}
+          className={fieldClassName}
+        />
       </div>
       <div>
         <label className={clsx(
@@ -56,8 +112,11 @@ export default function LandingContactForm() {
           Message
         </label>
         <textarea
+          name="message"
           required
           rows={5}
+          minLength={10}
+          maxLength={5000}
           className={clsx(fieldClassName, 'resize-y')}
         />
       </div>
